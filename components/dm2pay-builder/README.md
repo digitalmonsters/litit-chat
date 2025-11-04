@@ -128,3 +128,4 @@ The component automatically saves configuration to `localStorage` when initializ
 
 
 
+
