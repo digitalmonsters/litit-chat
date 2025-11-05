@@ -273,6 +273,7 @@ export interface FirestorePayment {
   userId: string; // User who made the payment
   callId?: string; // Associated call ID (for call payments)
   chatId?: string; // Associated chat ID (for message unlocks)
+  messageId?: string; // Associated message ID (for message unlocks)
   invoiceId?: string; // Invoice ID (alternative to callId)
   amount: number; // Amount in cents or dollars
   currency?: string; // Currency (USD, STARS, etc.)
@@ -285,6 +286,10 @@ export interface FirestorePayment {
   ghlTransactionId?: string; // GHL transaction/invoice ID
   ghlContactId?: string; // GHL contact ID
   ghlLocationId?: string; // GHL location ID
+
+  // Status timestamps
+  completedAt?: Timestamp; // When payment was completed
+  failedAt?: Timestamp; // When payment failed
 
   // Description and metadata
   description?: string;
