@@ -43,4 +43,36 @@ export interface FirestoreLiveStream {
   };
 }
 
+// ============================================================================
+// BATTLES COLLECTION
+// ============================================================================
+
+export interface FirestoreBattle {
+  id: string; // Document ID
+  hostId: string; // Primary host ID (for backward compatibility)
+  host1Id: string; // First host ID
+  host2Id?: string; // Second host ID (for battle mode)
+  participants?: string[]; // Array of participant user IDs
+  status: 'scheduled' | 'live' | 'ended' | 'cancelled';
+  winnerId?: string; // Winner user ID (if battle ended)
+  
+  // Tips
+  host1Tips?: number; // Tips for host 1 (in stars)
+  host2Tips?: number; // Tips for host 2 (in stars)
+  totalTips?: number; // Total tips (in stars)
+  
+  // Battle metrics
+  duration?: number; // Duration in seconds
+  peakViewers?: number; // Peak viewer count
+  
+  // Timestamps
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+  startedAt?: Timestamp;
+  endedAt?: Timestamp;
+  
+  // Metadata
+  metadata?: Record<string, unknown>;
+}
+
 // ... rest of existing code ...
