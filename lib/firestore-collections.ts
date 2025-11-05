@@ -470,3 +470,35 @@ export interface FirestoreVideo {
   // Metadata
   metadata?: Record<string, unknown>;
 }
+
+// ============================================================================
+// LIKES COLLECTION
+// ============================================================================
+
+export interface FirestoreLike {
+  id: string; // Document ID (composite: userId_targetUserId)
+  userId: string; // User who liked
+  targetUserId: string; // User being liked
+  type: 'like' | 'pass'; // Action type
+  createdAt: Timestamp;
+  
+  // Optional metadata
+  metadata?: Record<string, unknown>;
+}
+
+// ============================================================================
+// MATCHES COLLECTION
+// ============================================================================
+
+export interface FirestoreMatch {
+  id: string; // Document ID
+  userIds: [string, string]; // Array of two matched user IDs (sorted alphabetically)
+  chatId?: string; // Chat ID if conversation started
+  status: 'active' | 'unmatched'; // Match status
+  createdAt: Timestamp;
+  unmatchedAt?: Timestamp;
+  unmatchedBy?: string; // User ID who unmatched
+  
+  // Optional metadata
+  metadata?: Record<string, unknown>;
+}
