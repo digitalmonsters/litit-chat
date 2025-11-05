@@ -38,10 +38,16 @@ export default function ProfileModal({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isOnline, setIsOnline] = useState(false);
 
+  // Get avatar carousel images (photoURL + any additional images from metadata)
   const images = user
     ? [
         user.photoURL,
-        // Add more images from user metadata if available
+        // Check for additional images in metadata
+        ...(user.metadata?.images && Array.isArray(user.metadata.images) 
+          ? user.metadata.images 
+          : []),
+        // Check for heroImage in metadata
+        ...(user.metadata?.heroImage ? [user.metadata.heroImage] : []),
       ].filter(Boolean) as string[]
     : [];
 
@@ -86,7 +92,10 @@ export default function ProfileModal({
             variants={flameSlideUp}
             className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 z-50 md:max-w-2xl md:w-full md:max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
-            style={{ willChange: 'transform, opacity' }}
+            style={{ 
+              willChange: 'transform, opacity',
+              transform: 'translateZ(0)', // GPU acceleration for 60fps
+            }}
           >
             <div className="bg-[#1E1E1E] rounded-2xl overflow-hidden border border-gray-800">
               {/* Close button */}
@@ -234,7 +243,8 @@ export default function ProfileModal({
                     onClick={() => onFollow?.(user.id)}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex-1 py-3 px-6 bg-gradient-to-r from-[#FF5E3A] to-[#FF9E57] text-white rounded-xl font-semibold hover:from-[#FF6E4A] hover:to-[#FFAE67] transition-all"
+                    style={{ willChange: 'transform' }}
+                    className="flex-1 py-3 px-6 bg-gradient-to-r from-[#FF5E3A] to-[#FF9E57] text-white rounded-xl font-semibold hover:from-[#FF6E4A] hover:to-[#FFAE67] transition-all shadow-lg hover:shadow-[#FF5E3A]/50"
                   >
                     Follow
                   </motion.button>
@@ -243,6 +253,7 @@ export default function ProfileModal({
                     onClick={() => onMessage?.(user.id)}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
+                    style={{ willChange: 'transform' }}
                     className="flex-1 py-3 px-6 bg-gray-800 text-white rounded-xl font-semibold hover:bg-gray-700 transition-colors"
                   >
                     Message
@@ -252,6 +263,7 @@ export default function ProfileModal({
                     onClick={() => onTip?.(user.id)}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
+                    style={{ willChange: 'transform' }}
                     className="flex-1 py-3 px-6 bg-gray-800 text-white rounded-xl font-semibold hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -46,9 +46,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log(`✅ Synced ${result.syncedCount} contacts to Firestore users`);
+    
     return NextResponse.json({
       success: true,
-      message: `Synced ${result.syncedCount} GHL contacts → Firestore users`,
+      message: `Synced ${result.syncedCount} contacts to Firestore users`,
       syncedCount: result.syncedCount,
     });
   } catch (error) {
@@ -74,7 +76,7 @@ export async function GET(request: NextRequest) {
     message: 'Discover Feed Sync API',
     endpoint: '/api/discover/sync',
     method: 'POST',
-    schedule: 'Every 4 hours via Vercel Cron',
+    schedule: 'Every 6 hours via Vercel Cron',
     description: 'Syncs GHL contacts (tags: Creator or Public) to Firestore users',
   });
 }

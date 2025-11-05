@@ -4,6 +4,7 @@ import { doc, setDoc, query, where, getDocs, updateDoc, serverTimestamp, collect
 import type { FirestorePayment, FirestoreUser, FirestoreMessage } from '@/lib/firestore-collections';
 import { convertUsdToStars, getOrCreateWallet, addStars } from '@/lib/wallet';
 import { STAR_CONVERSION_RATE } from '@/lib/wallet';
+import { completeTransaction } from '@/lib/transactions';
 
 /**
  * GHL Payment Webhook Payload
@@ -292,10 +293,29 @@ export async function POST(request: NextRequest) {
       // Update payment userId if we found a user
       if (uniqueUsers.size === 1) {
         const userId = Array.from(uniqueUsers.keys())[0];
+        const paymentDataSnap = await getDoc(paymentRef);
+        const currentPaymentData = paymentDataSnap.exists() 
+          ? paymentDataSnap.data() as FirestorePayment 
+          : null;
+
         await updateDoc(paymentRef, {
           userId,
           updatedAt: serverTimestamp() as Timestamp,
         });
+
+        // Sync payment to transaction if transactionId exists in metadata
+        if (currentPaymentData?.metadata?.transactionId && paymentStatus === 'completed') {
+          try {
+            await completeTransaction(
+              currentPaymentData.metadata.transactionId as string,
+              paymentRef.id,
+              payment.id
+            );
+            console.log(`✅ Synced payment to transaction: ${currentPaymentData.metadata.transactionId}`);
+          } catch (error) {
+            console.error(`❌ Error syncing payment to transaction:`, error);
+          }
+        }
       }
     }
 
@@ -346,9 +366,15 @@ function determineTierFromAmount(amount: number): FirestoreUser['tier'] {
  * Check if tier should be upgraded
  */
 function shouldUpgradeTier(currentTier: FirestoreUser['tier'], newTier: FirestoreUser['tier']): boolean {
-  const tierOrder = { free: 0, basic: 1, premium: 2, enterprise: 3 };
-  const currentLevel = tierOrder[currentTier || 'free'];
-  const newLevel = tierOrder[newTier || 'free'];
+  const tierOrder: Record<string, number> = { 
+    free: 0, 
+    basic: 1, 
+    premium: 2, 
+    enterprise: 3,
+    litplus: 2, // Same level as premium
+  };
+  const currentLevel = tierOrder[currentTier || 'free'] ?? 0;
+  const newLevel = tierOrder[newTier || 'free'] ?? 0;
   return newLevel > currentLevel;
 }
 
@@ -473,6 +499,20 @@ async function handleInvoicePaid(invoice: {
       await updateDoc(paymentDoc.ref, {
         completedAt: serverTimestamp() as Timestamp,
       });
+
+      // Sync payment to transaction if transactionId exists
+      if (paymentData.metadata?.transactionId) {
+        try {
+          await completeTransaction(
+            paymentData.metadata.transactionId as string,
+            paymentDoc.id,
+            invoice.id
+          );
+          console.log(`✅ Synced payment to transaction: ${paymentData.metadata.transactionId}`);
+        } catch (error) {
+          console.error(`❌ Error syncing payment to transaction:`, error);
+        }
+      }
 
       // Handle wallet topup payments - increment wallets.stars
       if (paymentData.metadata?.type === 'wallet_topup' && paymentData.userId) {

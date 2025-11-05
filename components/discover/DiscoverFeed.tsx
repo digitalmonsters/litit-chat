@@ -4,13 +4,16 @@
  * Discover Feed Component
  * 
  * Shows users in grid/carousel format with tabs
+ * Real-time updates via Firestore listeners
  */
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getRecentUsers, getOnlineUsers, getPopularUsers } from '@/lib/users';
+import { collection, query, where, orderBy, limit, onSnapshot, Timestamp } from 'firebase/firestore';
+import { getFirestoreInstance, COLLECTIONS } from '@/lib/firebase';
 import UserCard from './UserCard';
 import ProfileModal from './ProfileModal';
+import SwipeableCardStack from './SwipeableCardStack';
 import type { FirestoreUser } from '@/lib/firestore-collections';
 import { flameFadeIn } from '@/lib/flame-transitions';
 import { cn } from '@/lib/utils';
@@ -29,36 +32,78 @@ export default function DiscoverFeed() {
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<FirestoreUser | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Fetch users based on active tab
+  // Detect mobile viewport
   useEffect(() => {
-    const fetchUsers = async () => {
-      setLoading(true);
-      try {
-        let fetchedUsers: FirestoreUser[] = [];
-        
-        switch (activeTab) {
-          case 'recent':
-            fetchedUsers = await getRecentUsers(20);
-            break;
-          case 'online':
-            fetchedUsers = await getOnlineUsers(20);
-            break;
-          case 'popular':
-            fetchedUsers = await getPopularUsers(20);
-            break;
-        }
-        
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Real-time Firestore listener based on active tab
+  useEffect(() => {
+    setLoading(true);
+    const db = getFirestoreInstance();
+    const usersRef = collection(db, COLLECTIONS.USERS);
+    
+    let q;
+    
+    switch (activeTab) {
+      case 'recent':
+        // Who Just Joined (order by createdAt desc)
+        q = query(
+          usersRef,
+          where('verified', '==', true),
+          orderBy('createdAt', 'desc'),
+          limit(20)
+        );
+        break;
+      case 'online':
+        // Who's Online (lastSeen within 5 minutes)
+        const fiveMinutesAgo = Timestamp.fromMillis(Date.now() - 5 * 60 * 1000);
+        q = query(
+          usersRef,
+          where('verified', '==', true),
+          where('lastSeen', '>=', fiveMinutesAgo),
+          orderBy('lastSeen', 'desc'),
+          limit(20)
+        );
+        break;
+      case 'popular':
+        // Popular (by updatedAt for now - can be enhanced with followers/engagement)
+        q = query(
+          usersRef,
+          where('verified', '==', true),
+          orderBy('updatedAt', 'desc'),
+          limit(20)
+        );
+        break;
+      default:
+        q = query(usersRef, where('verified', '==', true), limit(20));
+    }
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const fetchedUsers = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as FirestoreUser[];
         setUsers(fetchedUsers);
-      } catch (error) {
+        setLoading(false);
+      },
+      (error) => {
         // eslint-disable-next-line no-console
         console.error('Error fetching users:', error);
-      } finally {
         setLoading(false);
       }
-    };
+    );
 
-    fetchUsers();
+    return () => unsubscribe();
   }, [activeTab]);
 
   const handleUserClick = (user: FirestoreUser) => {
@@ -120,32 +165,67 @@ export default function DiscoverFeed() {
           >
             <p className="text-gray-400">No users found</p>
           </motion.div>
+        ) : isMobile ? (
+          // Mobile: Swipeable card stack
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="flex-1 h-full"
+            >
+              <SwipeableCardStack
+                users={users}
+                onCardClick={handleUserClick}
+                onSwipeAway={(user) => {
+                  // eslint-disable-next-line no-console
+                  console.log('Swiped away:', user.id);
+                }}
+              />
+            </motion.div>
+          </AnimatePresence>
         ) : (
+          // Desktop: Grid layout (3 columns)
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
+              transition={{ 
+                duration: 0.3,
+                ease: [0.4, 0, 0.2, 1], // Custom easing for 60fps
+              }}
               className={cn(
                 'grid gap-4',
-                // Mobile: 1 column (vertical swipe)
-                'grid-cols-1',
                 // Tablet: 2 columns
                 'md:grid-cols-2',
-                // Desktop: 3 columns
+                // Desktop: 3 columns (as requested)
                 'lg:grid-cols-3',
-                // Large desktop: 4 columns
-                'xl:grid-cols-4'
+                // Large desktop: keep 3 columns
+                'xl:grid-cols-3'
               )}
+              style={{ willChange: 'transform, opacity' }}
             >
-              {users.map((user) => (
-                <UserCard
+              {users.map((user, index) => (
+                <motion.div
                   key={user.id}
-                  user={user}
-                  onClick={() => handleUserClick(user)}
-                />
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ 
+                    duration: 0.3,
+                    delay: index * 0.05, // Stagger animation
+                    ease: [0.4, 0, 0.2, 1],
+                  }}
+                  style={{ willChange: 'transform, opacity' }}
+                >
+                  <UserCard
+                    user={user}
+                    onClick={() => handleUserClick(user)}
+                  />
+                </motion.div>
               ))}
             </motion.div>
           </AnimatePresence>

@@ -97,6 +97,9 @@ export const COLLECTIONS = {
   PAYMENTS: 'payments',
   WALLETS: 'wallets',
   CALLS: 'calls',
+  BATTLES: 'battles',
+  LIVEPARTIES: 'liveparties',
+  TRANSACTIONS: 'transactions',
   LIVESTREAMS: 'livestreams',
   TIPS: 'tips',
 } as const;

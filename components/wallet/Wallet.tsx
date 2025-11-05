@@ -7,10 +7,12 @@
  * Flame-themed with animated transitions
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWallet } from '@/contexts/WalletContext';
+import { getFirestoreInstance, COLLECTIONS } from '@/lib/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { flameFadeIn, flameGlow } from '@/lib/flame-transitions';
 import Button from '@/components/ui/Button';
@@ -22,10 +24,42 @@ export interface WalletProps {
 export default function Wallet({ className }: WalletProps) {
   const { user } = useAuth();
   const { wallet, loading: walletLoading } = useWallet();
+  const [userStars, setUserStars] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Get wallet balance from WalletContext or default to 0
-  const starsBalance = wallet?.stars || 0;
+  // Read stars from users/{uid}.stars (if available)
+  useEffect(() => {
+    if (!user) {
+      setUserStars(null);
+      return;
+    }
+
+    const db = getFirestoreInstance();
+    const userRef = doc(db, COLLECTIONS.USERS, user.uid);
+
+    const unsubscribe = onSnapshot(
+      userRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const userData = snapshot.data();
+          // Check if stars field exists in user document
+          if (userData.stars !== undefined) {
+            setUserStars(userData.stars);
+          }
+        }
+      },
+      (err) => {
+        // eslint-disable-next-line no-console
+        console.error('Error fetching user stars:', err);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user]);
+
+  // Get wallet balance from wallets/{uid} (primary source)
+  // Fallback to users/{uid}.stars if wallet doesn't exist
+  const starsBalance = wallet?.stars ?? userStars ?? 0;
   const usdBalance = wallet?.usd ? wallet.usd / 100 : 0; // Convert cents to dollars
 
   const handleTopUp = async () => {

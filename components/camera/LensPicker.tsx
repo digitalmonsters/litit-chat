@@ -3,73 +3,46 @@
 /**
  * Lens Picker Component
  * 
- * Scrollable filters/lenses for Snap Camera Kit
+ * Scrollable filter/lens selection for Snap Camera Kit
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { flameFadeIn } from '@/lib/flame-transitions';
 
 export interface LensPickerProps {
+  lensGroups?: Array<{
+    id: string;
+    name: string;
+    thumbnail?: string;
+  }>;
   onLensSelect?: (lensId: string) => void;
-  selectedLensId?: string;
   className?: string;
 }
 
-interface Lens {
-  id: string;
-  name: string;
-  thumbnail?: string;
-  icon?: string;
-}
-
 export default function LensPicker({
+  lensGroups = [],
   onLensSelect,
-  selectedLensId,
   className,
 }: LensPickerProps) {
-  const [lenses, setLenses] = useState<Lens[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadLenses() {
-      try {
-        // Load lenses from Camera Kit
-        // This is a placeholder - actual implementation depends on Camera Kit API
-        const mockLenses: Lens[] = [
-          { id: 'none', name: 'None', icon: '📷' },
-          { id: 'flame', name: 'Flame', icon: '🔥' },
-          { id: 'sparkle', name: 'Sparkle', icon: '✨' },
-          { id: 'vintage', name: 'Vintage', icon: '📸' },
-          { id: 'blur', name: 'Blur', icon: '🌫️' },
-          { id: 'glow', name: 'Glow', icon: '💫' },
-        ];
-
-        setLenses(mockLenses);
-        setLoading(false);
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error('Error loading lenses:', err);
-        setLoading(false);
-      }
-    }
-
-    loadLenses();
-  }, []);
+  const [selectedLens, setSelectedLens] = useState<string | null>(null);
 
   const handleLensSelect = (lensId: string) => {
+    setSelectedLens(lensId);
     onLensSelect?.(lensId);
-    // TODO: Apply lens to camera
   };
 
-  if (loading) {
-    return (
-      <div className={cn('flex items-center justify-center p-4', className)}>
-        <div className="w-6 h-6 border-2 border-[#FF5E3A] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  // Default lenses if none provided
+  const defaultLenses = [
+    { id: 'none', name: 'None', thumbnail: null },
+    { id: 'flame', name: 'Flame', thumbnail: null },
+    { id: 'sparkle', name: 'Sparkle', thumbnail: null },
+    { id: 'vintage', name: 'Vintage', thumbnail: null },
+    { id: 'colorful', name: 'Colorful', thumbnail: null },
+  ];
+
+  const lenses = lensGroups.length > 0 ? lensGroups : defaultLenses;
 
   return (
     <motion.div
@@ -78,37 +51,44 @@ export default function LensPicker({
       variants={flameFadeIn}
       className={cn('w-full', className)}
     >
-      <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 px-2">
-        {lenses.map((lens) => (
+      <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2">
+        {lenses.map((lens, index) => (
           <motion.button
             key={lens.id}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: index * 0.05 }}
             onClick={() => handleLensSelect(lens.id)}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             className={cn(
-              'flex-shrink-0 w-16 h-16 rounded-xl flex flex-col items-center justify-center gap-1',
-              'border-2 transition-all',
-              selectedLensId === lens.id
-                ? 'border-[#FF5E3A] bg-gradient-to-br from-[#FF5E3A]/20 to-[#FF9E57]/20'
-                : 'border-gray-700 bg-gray-800 hover:border-gray-600'
+              'flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all',
+              selectedLens === lens.id
+                ? 'border-[#FF5E3A] ring-2 ring-[#FF5E3A]/50'
+                : 'border-gray-700 hover:border-gray-600'
             )}
           >
             {lens.thumbnail ? (
               <img
                 src={lens.thumbnail}
                 alt={lens.name}
-                className="w-8 h-8 rounded-lg object-cover"
+                className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-2xl">{lens.icon}</span>
+              <div
+                className={cn(
+                  'w-full h-full flex items-center justify-center text-xs font-semibold',
+                  selectedLens === lens.id
+                    ? 'bg-gradient-to-br from-[#FF5E3A] to-[#FF9E57] text-white'
+                    : 'bg-gray-800 text-gray-400'
+                )}
+              >
+                {lens.name.charAt(0)}
+              </div>
             )}
-            <span className="text-xs text-gray-300 truncate max-w-full px-1">
-              {lens.name}
-            </span>
           </motion.button>
         ))}
       </div>
     </motion.div>
   );
 }
-

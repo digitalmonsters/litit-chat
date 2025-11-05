@@ -206,7 +206,7 @@ export async function syncGHLContactsToFirestore(): Promise<{
     }
 
     // eslint-disable-next-line no-console
-    console.log(`✅ Synced ${syncedCount} GHL contacts → Firestore users`);
+    console.log(`✅ Synced ${syncedCount} contacts to Firestore users`);
 
     return {
       success: true,

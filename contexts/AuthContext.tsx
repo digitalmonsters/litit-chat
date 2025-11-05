@@ -21,6 +21,7 @@ import {
   signOut,
   getAuthRedirectResult,
 } from '@/lib/auth';
+import { initializeFCM } from '@/lib/firebase-messaging';
 import type { FirestoreUser } from '@/lib/firestore-collections';
 
 interface AuthContextType {
@@ -94,6 +95,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
           
           const complete = await checkProfileComplete(authUser.uid);
           setIsProfileComplete(complete);
+          
+          // Initialize FCM and save token
+          try {
+            await initializeFCM();
+          } catch (fcmError) {
+            // eslint-disable-next-line no-console
+            console.warn('Error initializing FCM:', fcmError);
+          }
         } catch (err) {
           // eslint-disable-next-line no-console
           console.error('Error creating/updating user:', err);

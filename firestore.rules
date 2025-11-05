@@ -103,6 +103,91 @@ service cloud.firestore {
       // Only backend can create/update contacts
       allow create, update: if false;
     }
+
+    // Wallets collection
+    match /wallets/{walletId} {
+      // Users can read their own wallet
+      allow read: if isAuthenticated() && currentUserId() == walletId;
+      
+      // Users cannot create/update wallets directly (must use API)
+      allow create, update: if false;
+    }
+
+    // Calls collection
+    match /calls/{callId} {
+      // Users can read calls they are participants in
+      allow read: if isAuthenticated() && 
+                     (currentUserId() == resource.data.hostId ||
+                      currentUserId() in resource.data.participantIds);
+      
+      // Users can create calls (via API)
+      allow create: if isAuthenticated() && 
+                       currentUserId() == request.resource.data.hostId;
+      
+      // Users can update their own calls (host only)
+      allow update: if isAuthenticated() && 
+                       currentUserId() == resource.data.hostId;
+    }
+
+    // Livestreams collection
+    match /livestreams/{livestreamId} {
+      // Users can read all livestreams (for discovery)
+      allow read: if isAuthenticated();
+      
+      // Hosts can create livestreams
+      allow create: if isAuthenticated() && 
+                       currentUserId() == request.resource.data.hostId;
+      
+      // Hosts can read/write their own livestreams
+      allow read, update: if isAuthenticated() && 
+                             currentUserId() == resource.data.hostId;
+      
+      // Viewers can update their viewer data (join/leave)
+      allow update: if isAuthenticated() && 
+                       (currentUserId() == resource.data.hostId ||
+                        currentUserId() in resource.data.viewers);
+    }
+
+    // Transactions collection
+    match /transactions/{transactionId} {
+      // Users can read their own transactions
+      allow read: if isAuthenticated() && 
+                     currentUserId() == resource.data.userId;
+      
+      // Users cannot create/update transactions directly (must use API)
+      allow create, update: if false;
+    }
+
+    // Tips collection
+    match /tips/{tipId} {
+      // Users can read tips they sent or received
+      allow read: if isAuthenticated() && 
+                     (currentUserId() == resource.data.tipperId ||
+                      currentUserId() == resource.data.hostId);
+      
+      // Users can create tips they send
+      allow create: if isAuthenticated() && 
+                       currentUserId() == request.resource.data.tipperId;
+      
+      // Users cannot update tips (only backend can)
+      allow update: if false;
+    }
+
+    // Battles collection
+    match /battles/{battleId} {
+      // Users can read battles they participate in
+      allow read: if isAuthenticated() && 
+                     (currentUserId() == resource.data.hostId ||
+                      currentUserId() in resource.data.participantIds);
+      
+      // Hosts can create battles
+      allow create: if isAuthenticated() && 
+                       currentUserId() == request.resource.data.hostId;
+      
+      // Hosts can update their own battles
+      allow update: if isAuthenticated() && 
+                       currentUserId() == resource.data.hostId;
+    }
   }
 }
 

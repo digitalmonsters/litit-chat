@@ -50,17 +50,43 @@ export default function UserCard({ user, onClick, className }: UserCardProps) {
         y: -4,
       }}
       whileTap={{ scale: 0.98 }}
-      style={{ willChange: 'transform' }}
+      style={{ 
+        willChange: 'transform',
+        transform: 'translateZ(0)', // GPU acceleration
+      }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ 
+        duration: 0.3,
+        ease: [0.4, 0, 0.2, 1], // Custom easing for smooth 60fps
+      }}
     >
-      {/* Ghost-flame hover effect */}
+      {/* Ghost-flame hover effect with pulsing animation */}
       <motion.div
-        className="absolute inset-0 opacity-0 pointer-events-none"
-        whileHover={{ opacity: 0.1 }}
+        className="absolute inset-0 opacity-0 pointer-events-none rounded-xl"
+        whileHover={{ 
+          opacity: [0.1, 0.2, 0.1],
+        }}
+        transition={{
+          duration: 2,
+          repeat: Infinity,
+          ease: 'easeInOut',
+        }}
         style={{
-          background: 'linear-gradient(135deg, rgba(255, 94, 58, 0.3) 0%, rgba(255, 158, 87, 0.3) 100%)',
+          background: 'linear-gradient(135deg, rgba(255, 94, 58, 0.4) 0%, rgba(255, 158, 87, 0.4) 100%)',
+          willChange: 'opacity',
+        }}
+      />
+      
+      {/* Additional glow effect */}
+      <motion.div
+        className="absolute inset-0 opacity-0 pointer-events-none rounded-xl"
+        whileHover={{ 
+          opacity: 0.15,
+        }}
+        style={{
+          boxShadow: '0 0 40px rgba(255, 94, 58, 0.6)',
+          willChange: 'opacity',
         }}
       />
 
@@ -146,22 +172,6 @@ export default function UserCard({ user, onClick, className }: UserCardProps) {
         )}
       </div>
 
-      {/* Hover glow effect */}
-      <motion.div
-        className="absolute inset-0 rounded-xl pointer-events-none"
-        initial={{ opacity: 0 }}
-        whileHover={{
-          opacity: [0, 0.3, 0],
-        }}
-        transition={{
-          duration: 2,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-        style={{
-          boxShadow: '0 0 30px rgba(255, 94, 58, 0.5)',
-        }}
-      />
     </motion.div>
   );
 }

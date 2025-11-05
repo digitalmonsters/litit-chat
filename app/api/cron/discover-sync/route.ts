@@ -40,9 +40,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    console.log(`✅ Synced ${result.syncedCount} contacts to Firestore users`);
+    
     return NextResponse.json({
       success: true,
-      message: `Synced ${result.syncedCount} GHL contacts → Firestore users`,
+      message: `Synced ${result.syncedCount} contacts to Firestore users`,
       syncedCount: result.syncedCount,
       timestamp: new Date().toISOString(),
     });

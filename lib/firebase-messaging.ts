@@ -5,7 +5,9 @@
  */
 
 import { getMessaging, getToken, onMessage, Messaging } from 'firebase/messaging';
-import { getFirebaseApp } from './firebase';
+import { getFirebaseApp, getFirestoreInstance, COLLECTIONS, getAuthInstance } from './firebase';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
 
 let messaging: Messaging | null = null;
 
@@ -67,7 +69,8 @@ export async function requestNotificationPermission(): Promise<string | null> {
 
     if (token) {
       console.log('✅ FCM token obtained:', token);
-      // Store token in Firestore or send to backend
+      // Store token in Firestore
+      await saveFCMTokenToFirestore(token);
       return token;
     } else {
       console.warn('No FCM token available');
@@ -128,5 +131,94 @@ export function getNotificationPermission(): NotificationPermission {
   }
 
   return Notification.permission;
+}
+
+/**
+ * Save FCM token to Firestore user document
+ */
+async function saveFCMTokenToFirestore(token: string): Promise<void> {
+  try {
+    const auth = getAuthInstance();
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+      // Wait for auth state
+      return new Promise((resolve) => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+          unsubscribe();
+          if (user) {
+            await saveTokenForUser(user.uid, token);
+          }
+          resolve();
+        });
+      });
+    }
+
+    await saveTokenForUser(currentUser.uid, token);
+  } catch (error) {
+    console.error('Error saving FCM token to Firestore:', error);
+    // Try API endpoint as fallback
+    try {
+      const auth = getAuthInstance();
+      const currentUser = auth.currentUser;
+      
+      if (currentUser) {
+        const idToken = await currentUser.getIdToken();
+        const response = await fetch('/api/push/token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({ fcmToken: token }),
+        });
+
+        if (!response.ok) {
+          console.error('Failed to save FCM token via API');
+        } else {
+          console.log('✅ FCM token saved via API fallback');
+        }
+      }
+    } catch (apiError) {
+      console.error('Error saving FCM token via API:', apiError);
+    }
+  }
+}
+
+/**
+ * Save FCM token for specific user
+ */
+async function saveTokenForUser(userId: string, token: string): Promise<void> {
+  try {
+    const firestore = getFirestoreInstance();
+    const userRef = doc(firestore, COLLECTIONS.USERS, userId);
+    
+    await updateDoc(userRef, {
+      fcmToken: token,
+      updatedAt: serverTimestamp(),
+    });
+    
+    console.log(`✅ FCM token saved to Firestore for user ${userId}`);
+  } catch (error) {
+    console.error('Error saving FCM token:', error);
+    throw error;
+  }
+}
+
+/**
+ * Initialize FCM and save token on login
+ * Call this after user signs in
+ */
+export async function initializeFCM(): Promise<string | null> {
+  try {
+    const token = await requestNotificationPermission();
+    if (token) {
+      await saveFCMTokenToFirestore(token);
+    }
+    return token;
+  } catch (error) {
+    console.error('Error initializing FCM:', error);
+    return null;
+  }
 }
 
