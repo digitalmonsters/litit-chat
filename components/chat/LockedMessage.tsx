@@ -24,20 +24,25 @@ export default function LockedMessage({
   onUnlock,
   className,
 }: LockedMessageProps) {
-  const attachment = message.attachments?.[0];
+  const attachmentRaw = message.attachments?.[0];
   const price = message.unlockPrice
     ? `$${(message.unlockPrice / 100).toFixed(2)}`
     : '$0.00';
 
-  if (!attachment || !message.isLocked) {
+  if (!attachmentRaw || !message.isLocked) {
     return null;
   }
 
+  // Handle attachment as string or object
+  const attachment = typeof attachmentRaw === 'string'
+    ? { url: attachmentRaw, type: 'image', name: 'File' }
+    : attachmentRaw;
+
   // Safe access to attachment properties
-  const attachmentType = attachment?.type || '';
-  const attachmentUrl = attachment?.url || '';
-  const attachmentName = attachment?.name || 'File';
-  const attachmentSize = attachment?.size || 0;
+  const attachmentType = attachment.type || '';
+  const attachmentUrl = attachment.url || '';
+  const attachmentName = attachment.name || 'File';
+  const attachmentSize = attachment.size || 0;
 
   return (
     <motion.div

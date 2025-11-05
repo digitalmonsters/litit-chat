@@ -139,15 +139,19 @@ export default function MessageBubble({
           )}
 
           {/* Image attachment */}
-          {message.attachments?.some((att) => att.type.startsWith('image/')) && (
+          {message.attachments?.some((att) => {
+            const attachment = typeof att === 'string' ? { url: att, type: 'image' } : att;
+            return attachment.type?.startsWith('image/');
+          }) && (
             <div className="mt-2 space-y-2">
               {message.attachments
-                .filter((att) => att.type.startsWith('image/'))
+                ?.map((att) => typeof att === 'string' ? { url: att, type: 'image', name: 'Image' } : att)
+                .filter((att) => att.type?.startsWith('image/'))
                 .map((att, idx) => (
                   <img
                     key={idx}
                     src={att.url}
-                    alt={att.name}
+                    alt={att.name || 'Image'}
                     className="max-w-full rounded-lg"
                   />
                 ))}
@@ -155,10 +159,14 @@ export default function MessageBubble({
           )}
 
           {/* Video attachment */}
-          {message.attachments?.some((att) => att.type.startsWith('video/')) && (
+          {message.attachments?.some((att) => {
+            const attachment = typeof att === 'string' ? { url: att, type: 'video' } : att;
+            return attachment.type?.startsWith('video/');
+          }) && (
             <div className="mt-2 space-y-2">
               {message.attachments
-                .filter((att) => att.type.startsWith('video/'))
+                ?.map((att) => typeof att === 'string' ? { url: att, type: 'video', name: 'Video' } : att)
+                .filter((att) => att.type?.startsWith('video/'))
                 .map((att, idx) => (
                   <video
                     key={idx}
@@ -171,10 +179,14 @@ export default function MessageBubble({
           )}
 
           {/* Audio attachment */}
-          {message.attachments?.some((att) => att.type.startsWith('audio/')) && (
+          {message.attachments?.some((att) => {
+            const attachment = typeof att === 'string' ? { url: att, type: 'audio' } : att;
+            return attachment.type?.startsWith('audio/');
+          }) && (
             <div className="mt-2 space-y-2">
               {message.attachments
-                .filter((att) => att.type.startsWith('audio/'))
+                ?.map((att) => typeof att === 'string' ? { url: att, type: 'audio', name: 'Audio' } : att)
+                .filter((att) => att.type?.startsWith('audio/'))
                 .map((att, idx) => (
                   <audio key={idx} src={att.url} controls className="w-full" />
                 ))}

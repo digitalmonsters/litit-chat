@@ -272,9 +272,10 @@ export interface FirestorePayment {
   paymentMethod?: string;
   paymentMethodId?: string; // Payment method ID from payment provider
   description?: string;
-  
+
   // Timestamps
   completedAt?: Timestamp;
+  failedAt?: Timestamp;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   
@@ -313,10 +314,18 @@ export interface FirestoreTip {
 
 export interface FirestoreUser {
   id: string; // Document ID (user UID)
+  uid?: string; // User UID (alias for id, for compatibility)
   phone?: string; // User phone number
   email?: string;
   displayName?: string;
   photoURL?: string;
+  provider?: string; // Auth provider (google, apple, facebook, phone, email)
+  verified?: boolean; // Email/phone verification status
+  trialStartDate?: Timestamp; // Trial start date
+  trialEndDate?: Timestamp; // Trial end date
+  bio?: string;
+  location?: { address?: string; city?: string; country?: string } | string;
+  interests?: string[];
   audioCallEnabled?: boolean;
   stars: number; // User's star balance
   tier: 'free' | 'basic' | 'premium' | 'enterprise' | 'litplus';
@@ -372,6 +381,7 @@ export interface FirestoreMessage {
   senderName: string; // Display name of sender
   senderAvatar?: string; // Avatar URL of sender
   content: string; // Message content
+  text?: string; // Alternative text field (alias for content)
   type: 'text' | 'image' | 'file' | 'system' | 'payment';
   status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
   timestamp: Timestamp; // Message timestamp
@@ -384,14 +394,56 @@ export interface FirestoreMessage {
   isLocked?: boolean; // Whether message is locked (requires payment)
   unlockPrice?: number; // Unlock price in cents
   unlockCurrency?: 'USD' | 'STARS'; // Unlock currency
-  unlockedBy?: string[] | Record<string, unknown>; // Users who unlocked (array or map)
+  unlockedBy?: string[] | Record<string, boolean> | Record<string, Timestamp>; // Users who unlocked (array or map)
   ghlInvoiceId?: string; // GHL invoice ID for unlock payment
-  attachments?: Array<{ url: string; type: string; name?: string; size?: number }>; // Message attachments
+  attachments?: string[] | Array<{ url: string; type?: string; name?: string; size?: number }>; // Message attachments
 
-  createdAt: Timestamp;
-  updatedAt?: Timestamp;
+  createdAt: Timestamp | Date | number; // Flexible timestamp support
+  updatedAt?: Timestamp | Date | number;
   
   // Metadata
+  metadata?: {
+    [key: string]: unknown;
+  };
+}
+
+// ============================================================================
+// WALLET COLLECTION
+// ============================================================================
+
+export interface FirestoreWallet {
+  id: string; // Document ID (same as userId)
+  userId: string; // User ID
+  stars: number; // Star balance (integer)
+  usd: number; // USD balance in cents
+  totalEarned: number; // Total stars earned
+  totalSpent: number; // Total stars spent
+  totalUsdSpent: number; // Total USD spent in cents
+  lastActivityAt?: Timestamp; // Last wallet activity timestamp
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+
+  // Metadata
+  metadata?: {
+    [key: string]: unknown;
+  };
+}
+
+export interface CreateWalletData {
+  userId: string;
+  stars?: number;
+  usd?: number;
+  totalEarned?: number;
+  totalSpent?: number;
+  totalUsdSpent?: number;
+}
+
+export interface UpdateWalletData {
+  stars?: number;
+  usd?: number;
+  totalEarned?: number;
+  totalSpent?: number;
+  totalUsdSpent?: number;
   metadata?: {
     [key: string]: unknown;
   };

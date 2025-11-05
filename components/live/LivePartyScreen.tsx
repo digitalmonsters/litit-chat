@@ -38,7 +38,8 @@ export default function LivePartyScreen({
     isBattleMode: boolean;
     [key: string]: unknown;
   } | null>(null);
-  const [comments, setComments] = useState<Array<{
+  // Comment type definition
+  type CommentType = {
     id: string;
     userId: string;
     userName: string;
@@ -47,7 +48,9 @@ export default function LivePartyScreen({
     timestamp: Date;
     isTip?: boolean;
     tipAmount?: number;
-  }>>([]);
+  };
+
+  const [comments, setComments] = useState<CommentType[]>([]);
   const [newComment, setNewComment] = useState('');
   const [showTipModal, setShowTipModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -64,7 +67,15 @@ export default function LivePartyScreen({
       livestreamRef,
       (snapshot) => {
         if (snapshot.exists()) {
-          const data = { id: snapshot.id, ...snapshot.data() };
+          const data = { id: snapshot.id, ...snapshot.data() } as {
+            id: string;
+            hostId: string;
+            battleHostId?: string;
+            status: 'scheduled' | 'live' | 'ended' | 'cancelled';
+            viewerCount: number;
+            isBattleMode: boolean;
+            [key: string]: unknown;
+          };
           setLivestream(data);
         }
       },
@@ -86,11 +97,19 @@ export default function LivePartyScreen({
     const q = query(commentsRef, orderBy('timestamp', 'desc'), limit(100));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const commentsData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        timestamp: doc.data().timestamp?.toDate() || new Date(),
-      }));
+      const commentsData: CommentType[] = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          userId: data.userId || '',
+          userName: data.userName || 'Anonymous',
+          userAvatar: data.userAvatar,
+          message: data.message || '',
+          timestamp: data.timestamp?.toDate() || new Date(),
+          isTip: data.isTip || false,
+          tipAmount: data.tipAmount,
+        };
+      });
       setComments(commentsData.reverse()); // Reverse to show oldest first
     });
 
@@ -291,7 +310,7 @@ export default function LivePartyScreen({
         )}
         {livestream?.isBattleMode && livestream?.battleHostId && (
           <motion.button
-            onClick={() => handleTip(livestream.battleHostId)}
+            onClick={() => handleTip(livestream.battleHostId!)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="px-4 py-2 bg-gradient-to-r from-[#FF5E3A] to-[#FF9E57] rounded-lg text-white font-semibold flex items-center gap-2"
