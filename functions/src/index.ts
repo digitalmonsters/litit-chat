@@ -125,3 +125,62 @@ export const onUserSignIn = functions.auth.user().beforeSignIn(async (user, cont
     return null;
   }
 });
+
+/**
+ * Auto-expire old flames (24h stories)
+ * Runs every hour to delete expired flames
+ */
+export const expireFlames = functions.pubsub
+  .schedule('every 1 hours')
+  .onRun(async (context) => {
+    try {
+      const now = admin.firestore.Timestamp.now();
+      const flamesRef = admin.firestore().collection('flames');
+      
+      // Query for expired flames
+      const expiredFlamesQuery = await flamesRef
+        .where('expiresAt', '<=', now)
+        .get();
+      
+      if (expiredFlamesQuery.empty) {
+        console.log('✅ No expired flames to delete');
+        return null;
+      }
+      
+      // Delete expired flames in batches
+      const batchSize = 500;
+      const batches: admin.firestore.WriteBatch[] = [];
+      let currentBatch = admin.firestore().batch();
+      let operationCount = 0;
+      let batchCount = 0;
+      
+      expiredFlamesQuery.docs.forEach((doc) => {
+        currentBatch.delete(doc.ref);
+        operationCount++;
+        
+        // Firestore batch limit is 500 operations
+        if (operationCount >= batchSize) {
+          batches.push(currentBatch);
+          currentBatch = admin.firestore().batch();
+          operationCount = 0;
+          batchCount++;
+        }
+      });
+      
+      // Add remaining operations
+      if (operationCount > 0) {
+        batches.push(currentBatch);
+        batchCount++;
+      }
+      
+      // Commit all batches
+      await Promise.all(batches.map(batch => batch.commit()));
+      
+      console.log(`✅ Deleted ${expiredFlamesQuery.size} expired flames in ${batchCount} batches`);
+      
+      return null;
+    } catch (error) {
+      console.error('❌ Error expiring flames:', error);
+      throw error;
+    }
+  });

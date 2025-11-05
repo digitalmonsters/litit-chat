@@ -102,6 +102,9 @@ export const COLLECTIONS = {
   TRANSACTIONS: 'transactions',
   LIVESTREAMS: 'livestreams',
   TIPS: 'tips',
+  FLAMES: 'flames',
+  LIKES: 'likes',
+  MATCHES: 'matches',
 } as const;
 
 /**

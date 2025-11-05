@@ -137,6 +137,19 @@ export async function POST(request: NextRequest) {
       { merge: true }
     );
 
+    // Send push notifications to other participants (non-blocking)
+    // Note: This will be handled by Cloud Function onMessageCreated
+    // But we can also trigger it here for immediate delivery
+    if (typeof window === 'undefined') {
+      // Server-side only
+      import('@/lib/push-notifications')
+        .then(({ sendMessageNotification }) => {
+          sendMessageNotification(chatId, senderId, senderName, content, type)
+            .catch((err) => console.error('Error sending push notification:', err));
+        })
+        .catch((err) => console.error('Error loading push-notifications:', err));
+    }
+
     return NextResponse.json(
       {
         success: true,
