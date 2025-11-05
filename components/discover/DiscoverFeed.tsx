@@ -96,13 +96,28 @@ export default function DiscoverFeed() {
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <motion.div
-              className="w-12 h-12 border-4 border-[#FF5E3A] border-t-transparent rounded-full"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-            />
-          </div>
+          <motion.div
+            variants={flameStagger}
+            initial="initial"
+            animate="animate"
+            className={cn(
+              'grid gap-4',
+              'md:grid-cols-2',
+              'lg:grid-cols-3',
+              'xl:grid-cols-3'
+            )}
+          >
+            {Array.from({ length: 6 }).map((_, i) => (
+              <motion.div
+                key={i}
+                variants={flameStaggerItem}
+                initial="initial"
+                animate="animate"
+              >
+                <SkeletonCard />
+              </motion.div>
+            ))}
+          </motion.div>
         ) : users.length === 0 ? (
           <motion.div
             initial="hidden"

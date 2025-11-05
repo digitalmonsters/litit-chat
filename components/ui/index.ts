@@ -21,6 +21,9 @@ export type { LoadingSpinnerProps } from './LoadingSpinner';
 export { default as FlameLoader } from './FlameLoader';
 export type { FlameLoaderProps } from './FlameLoader';
 
+export { default as SkeletonLoader, SkeletonText, SkeletonAvatar, SkeletonCard } from './SkeletonLoader';
+export type { SkeletonLoaderProps } from './SkeletonLoader';
+
 
 
 

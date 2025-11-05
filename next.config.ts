@@ -29,6 +29,14 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'firebasestorage.googleapis.com',
       },
+      {
+        protocol: 'https',
+        hostname: '*.bunnycdn.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.bunny.net',
+      },
     ],
   },
   // Turbopack configuration
