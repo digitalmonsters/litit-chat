@@ -40,5 +40,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Firebase admin credentials
-scripts/seed/serviceAccountKey.json
+# Local Netlify folder
+.netlify

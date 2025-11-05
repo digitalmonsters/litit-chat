@@ -9,11 +9,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { flameFadeIn, userJoinSpring, userLeaveSpring } from '@/lib/flame-transitions';
+import { flameFadeIn } from '@/lib/flame-transitions';
 import TipModal from '@/components/tip/TipModal';
-import { getOptimizedImageSrc } from '@/lib/image-utils';
 import { getFirestoreInstance, COLLECTIONS } from '@/lib/firebase';
 import { doc, onSnapshot, updateDoc, collection, addDoc, serverTimestamp, query, orderBy, limit } from 'firebase/firestore';
 import type { FirestoreUser } from '@/lib/firestore-collections';
@@ -40,7 +38,8 @@ export default function LivePartyScreen({
     isBattleMode: boolean;
     [key: string]: unknown;
   } | null>(null);
-  const [comments, setComments] = useState<Array<{
+  // Comment type definition
+  type CommentType = {
     id: string;
     userId: string;
     userName: string;
@@ -49,7 +48,9 @@ export default function LivePartyScreen({
     timestamp: Date;
     isTip?: boolean;
     tipAmount?: number;
-  }>>([]);
+  };
+
+  const [comments, setComments] = useState<CommentType[]>([]);
   const [newComment, setNewComment] = useState('');
   const [showTipModal, setShowTipModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -66,16 +67,16 @@ export default function LivePartyScreen({
       livestreamRef,
       (snapshot) => {
         if (snapshot.exists()) {
-          const data = snapshot.data();
-          setLivestream({
-            id: snapshot.id,
-            hostId: data?.hostId ?? '',
-            battleHostId: data?.battleHostId,
-            status: data?.status ?? 'scheduled',
-            viewerCount: data?.viewerCount ?? 0,
-            isBattleMode: data?.isBattleMode ?? false,
-            ...data,
-          });
+          const data = { id: snapshot.id, ...snapshot.data() } as {
+            id: string;
+            hostId: string;
+            battleHostId?: string;
+            status: 'scheduled' | 'live' | 'ended' | 'cancelled';
+            viewerCount: number;
+            isBattleMode: boolean;
+            [key: string]: unknown;
+          };
+          setLivestream(data);
         }
       },
       (err) => {
@@ -96,17 +97,17 @@ export default function LivePartyScreen({
     const q = query(commentsRef, orderBy('timestamp', 'desc'), limit(100));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const commentsData = snapshot.docs.map((doc) => {
+      const commentsData: CommentType[] = snapshot.docs.map((doc) => {
         const data = doc.data();
         return {
           id: doc.id,
-          userId: data?.userId ?? '',
-          userName: data?.userName ?? 'Anonymous',
-          userAvatar: data?.userAvatar,
-          message: data?.message ?? '',
-          timestamp: data?.timestamp?.toDate() ?? new Date(),
-          isTip: data?.isTip,
-          tipAmount: data?.tipAmount,
+          userId: data.userId || '',
+          userName: data.userName || 'Anonymous',
+          userAvatar: data.userAvatar,
+          message: data.message || '',
+          timestamp: data.timestamp?.toDate() || new Date(),
+          isTip: data.isTip || false,
+          tipAmount: data.tipAmount,
         };
       });
       setComments(commentsData.reverse()); // Reverse to show oldest first
@@ -129,8 +130,8 @@ export default function LivePartyScreen({
       
       await addDoc(commentsRef, {
         userId: user.uid,
-        userName: user.displayName ?? 'Anonymous',
-        userAvatar: user.photoURL ?? undefined,
+        userName: user.displayName || 'Anonymous',
+        userAvatar: user.photoURL || undefined,
         message: newComment,
         timestamp: serverTimestamp(),
         createdAt: serverTimestamp(),
@@ -157,8 +158,8 @@ export default function LivePartyScreen({
       
       await addDoc(commentsRef, {
         userId: user.uid,
-        userName: user.displayName ?? 'Anonymous',
-        userAvatar: user.photoURL ?? undefined,
+        userName: user.displayName || 'Anonymous',
+        userAvatar: user.photoURL || undefined,
         message: `💫 Tipped $${(amount / 100).toFixed(2)}!`,
         isTip: true,
         tipAmount: amount,
@@ -231,30 +232,24 @@ export default function LivePartyScreen({
             {comments.map((comment) => (
               <motion.div
                 key={comment.id}
-                variants={userJoinSpring}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                layout
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
                 className={cn(
                   'flex items-start gap-2',
                   comment.isTip && 'bg-gradient-to-r from-[#FF5E3A]/20 to-[#FF9E57]/20 rounded-lg p-2'
                 )}
               >
                 {comment.userAvatar ? (
-                  <Image
-                    src={getOptimizedImageSrc(comment.userAvatar, { width: 24, height: 24, quality: 85 })}
+                  <img
+                    src={comment.userAvatar}
                     alt={comment.userName}
-                    width={24}
-                    height={24}
-                    className="w-6 h-6 rounded-full object-cover"
-                    loading="lazy"
-                    unoptimized={!comment.userAvatar.includes('bunnycdn.com') && !comment.userAvatar.includes('bunny.net')}
+                    className="w-6 h-6 rounded-full"
                   />
                 ) : (
                   <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#FF5E3A] to-[#FF9E57] flex items-center justify-center">
                     <span className="text-xs text-white font-semibold">
-                      {comment.userName?.charAt(0)?.toUpperCase() ?? '?'}
+                      {comment.userName.charAt(0).toUpperCase()}
                     </span>
                   </div>
                 )}
@@ -315,7 +310,7 @@ export default function LivePartyScreen({
         )}
         {livestream?.isBattleMode && livestream?.battleHostId && (
           <motion.button
-            onClick={() => handleTip(livestream.battleHostId ?? '')}
+            onClick={() => handleTip(livestream.battleHostId!)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="px-4 py-2 bg-gradient-to-r from-[#FF5E3A] to-[#FF9E57] rounded-lg text-white font-semibold flex items-center gap-2"
@@ -335,7 +330,7 @@ export default function LivePartyScreen({
             setSelectedUserId(null);
           }}
           recipientId={selectedUserId}
-          onSuccess={(amount) => handleTipSuccess(amount, selectedUserId ?? '')}
+          onSuccess={(amount) => handleTipSuccess(amount, selectedUserId)}
         />
       )}
     </div>

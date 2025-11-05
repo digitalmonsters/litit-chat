@@ -23,7 +23,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { flameFadeIn, flameStagger, flameStaggerItem } from '@/lib/flame-transitions';
 import type { FirestoreChat, FirestoreMessage } from '@/lib/firestore-collections';
-import { SkeletonCard, SkeletonText, SkeletonAvatar } from '@/components/ui/SkeletonLoader';
 
 export interface ChatListProps {
   onChatSelect: (chatId: string) => void;
@@ -34,6 +33,7 @@ export interface ChatListProps {
 interface ChatListItem extends FirestoreChat {
   lastMessage?: FirestoreMessage;
   unreadCount: number;
+  participantDetails?: Record<string, { displayName?: string; photoURL?: string }>;
 }
 
 export default function ChatList({
@@ -115,27 +115,9 @@ export default function ChatList({
 
   if (loading) {
     return (
-      <motion.div
-        variants={flameStagger}
-        initial="initial"
-        animate="animate"
-        className={cn('flex flex-col h-full overflow-y-auto p-4 space-y-3', className)}
-      >
-        {Array.from({ length: 5 }).map((_, i) => (
-          <motion.div
-            key={i}
-            variants={flameStaggerItem}
-            initial="initial"
-            animate="animate"
-            className="flex items-center gap-4 p-3 bg-[#1E1E1E] rounded-xl"
-          >
-            <SkeletonAvatar size={48} />
-            <div className="flex-1">
-              <SkeletonText lines={2} />
-            </div>
-          </motion.div>
-        ))}
-      </motion.div>
+      <div className={cn('flex items-center justify-center h-full', className)}>
+        <div className="w-8 h-8 border-2 border-[#FF5E3A] border-t-transparent rounded-full animate-spin" />
+      </div>
     );
   }
 
@@ -181,10 +163,14 @@ interface ChatListItemProps {
 
 function ChatListItem({ chat, isSelected, onClick }: ChatListItemProps) {
   const { user } = useAuth();
-  const otherParticipant = chat.participantIds?.find((id) => id !== user?.uid);
-  const participantName = chat.name ?? 'Unknown';
+  const otherParticipant = chat.participantIds.find((id) => id !== user?.uid);
+  const participantName = otherParticipant
+    ? chat.participantDetails?.[otherParticipant]?.displayName || 'Unknown'
+    : chat.name;
 
-  const participantAvatar = chat.avatar;
+  const participantAvatar = otherParticipant
+    ? chat.participantDetails?.[otherParticipant]?.photoURL
+    : chat.avatar;
 
   const formatTime = (timestamp?: Timestamp) => {
     if (!timestamp) return '';
@@ -202,13 +188,11 @@ function ChatListItem({ chat, isSelected, onClick }: ChatListItemProps) {
   const lastMessageText = chat.lastMessage
     ? chat.lastMessage.type === 'image'
       ? '📷 Photo'
-      : chat.lastMessage.type === 'video'
-      ? '🎥 Video'
-      : chat.lastMessage.type === 'audio'
-      ? '🎵 Audio'
       : chat.lastMessage.type === 'file'
       ? '📎 File'
-      : chat.lastMessage.content ?? ''
+      : chat.lastMessage.type === 'payment'
+      ? '💰 Payment'
+      : chat.lastMessage.content
     : 'No messages yet';
 
   return (
@@ -227,13 +211,13 @@ function ChatListItem({ chat, isSelected, onClick }: ChatListItemProps) {
         {participantAvatar ? (
           <img
             src={participantAvatar}
-            alt={participantName}
+            alt={participantName || 'Avatar'}
             className="w-12 h-12 rounded-full object-cover"
           />
         ) : (
           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#FF5E3A] to-[#FF9E57] flex items-center justify-center">
             <span className="text-white font-semibold">
-              {participantName?.charAt(0)?.toUpperCase() ?? '?'}
+              {participantName?.charAt(0).toUpperCase() || '?'}
             </span>
           </div>
         )}

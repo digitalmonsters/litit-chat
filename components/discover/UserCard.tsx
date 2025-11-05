@@ -8,10 +8,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import type { FirestoreUser } from '@/lib/firestore-collections';
-import { getOptimizedImageSrc } from '@/lib/image-utils';
 
 export interface UserCardProps {
   user: FirestoreUser;
@@ -95,19 +93,15 @@ export default function UserCard({ user, onClick, className }: UserCardProps) {
       {/* Avatar */}
       <div className="relative aspect-square">
         {user.photoURL ? (
-          <Image
-            src={getOptimizedImageSrc(user.photoURL, { width: 400, height: 400, quality: 85 })}
-            alt={user.displayName || user.email || 'User'}
-            fill
-            className="object-cover"
-            loading="lazy"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            unoptimized={!user.photoURL.includes('bunnycdn.com') && !user.photoURL.includes('bunny.net')}
+          <img
+            src={user.photoURL}
+            alt={user.displayName || 'User'}
+            className="w-full h-full object-cover"
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-[#FF5E3A] to-[#FF9E57] flex items-center justify-center">
             <span className="text-4xl font-bold text-white">
-              {user.displayName?.charAt(0)?.toUpperCase() ?? '?'}
+              {user.displayName?.charAt(0).toUpperCase() || '?'}
             </span>
           </div>
         )}
@@ -148,13 +142,13 @@ export default function UserCard({ user, onClick, className }: UserCardProps) {
         )}
 
         {/* Location */}
-        {(typeof user.location === 'string' ? user.location : user.location?.city) && (
+        {typeof user.location === 'object' && user.location?.city && (
           <div className="flex items-center gap-1 text-xs text-gray-500">
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            <span>{typeof user.location === 'string' ? user.location : user.location?.city}</span>
+            <span>{(user.location as { city: string }).city}</span>
           </div>
         )}
 

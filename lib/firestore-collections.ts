@@ -1,4 +1,312 @@
-import type { Timestamp } from 'firebase/firestore';
+import { Timestamp } from 'firebase/firestore';
+
+// Add LiveStream interface if it doesn't exist
+// ... existing code ...
+
+// ============================================================================
+// LIVESTREAMS COLLECTION
+// ============================================================================
+
+export interface FirestoreLiveStream {
+  id: string; // Document ID
+  hostId: string; // User ID of the host
+  battleHostId?: string; // User ID of second host (for battle mode)
+  
+  // Stream status
+  status: 'scheduled' | 'live' | 'ended' | 'cancelled';
+  
+  // Stream info
+  title?: string;
+  description?: string;
+  thumbnailUrl?: string;
+  
+  // Viewer metrics
+  viewerCount: number;
+  peakViewerCount: number;
+  
+  // Battle mode
+  isBattleMode: boolean;
+  
+  // 100ms room info
+  roomId?: string; // 100ms room ID
+  
+  // Timestamps
+  scheduledAt?: Timestamp;
+  startedAt?: Timestamp;
+  endedAt?: Timestamp;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  
+  // Metadata
+  metadata?: {
+    tags?: string[];
+    category?: string;
+    [key: string]: unknown;
+  };
+}
+
+// ============================================================================
+// BATTLES COLLECTION
+// ============================================================================
+
+export interface FirestoreBattle {
+  id: string; // Document ID
+  host1Id: string; // User ID of first host
+  host2Id: string; // User ID of second host
+  
+  // Battle status
+  status: 'scheduled' | 'live' | 'ended' | 'cancelled';
+  
+  // Battle tips
+  host1Tips: number;
+  host2Tips: number;
+  totalTips: number;
+  
+  // Battle winner
+  winnerId?: string | null;
+  rewardAmount?: number;
+  rewardTransactionId?: string;
+  
+  // Battle metrics
+  duration?: number; // Duration in seconds
+  peakViewers?: number;
+  
+  // 100ms room info
+  roomId?: string; // 100ms room ID
+  
+  // Timestamps
+  startedAt?: Timestamp;
+  endedAt?: Timestamp;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  
+  // Metadata
+  metadata?: {
+    [key: string]: unknown;
+  };
+}
+
+// ============================================================================
+// CALLS COLLECTION
+// ============================================================================
+
+export interface FirestoreCall {
+  id: string; // Document ID
+  roomId: string; // 100ms room ID
+  hostId: string; // Call host/initiator
+  callerId: string; // User ID of caller
+  receiverId?: string; // User ID of receiver (for direct calls)
+  participantIds: string[]; // All participants
+  
+  // Call type
+  type: 'direct' | 'group' | 'sip';
+  
+  // Call status
+  status: 'initiated' | 'active' | 'ended' | 'failed' | 'missed';
+  
+  // SIP settings
+  sipEnabled?: boolean;
+  sipPhoneNumber?: string;
+  
+  // Call metrics
+  duration?: number; // Duration in seconds
+  durationMins?: number; // Duration in minutes
+  
+  // Pricing
+  ratePerMinute?: number; // Rate in cents
+  cost?: number; // Cost in cents
+  costCurrency?: 'USD' | 'STARS';
+  
+  // Payment
+  paymentStatus?: 'pending' | 'paid' | 'failed' | 'free_trial';
+  paymentId?: string;
+  ghlInvoiceId?: string;
+  transactionId?: string;
+  
+  // Timestamps
+  startedAt?: Timestamp;
+  endedAt?: Timestamp;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  
+  // Metadata
+  metadata?: {
+    [key: string]: unknown;
+  };
+}
+
+// ============================================================================
+// LIVEPARTIES COLLECTION
+// ============================================================================
+
+export interface FirestoreLiveParty {
+  id: string; // Document ID
+  hostId: string; // User ID of the host
+  
+  // Party status
+  status: 'scheduled' | 'live' | 'ended' | 'cancelled';
+  
+  // Entry fee
+  entryFee: number; // Entry fee in cents or stars
+  entryFeeCurrency: 'USD' | 'STARS';
+  
+  // Viewer fees
+  viewerFeePerMinute?: number;
+  viewerFeeCurrency?: 'USD' | 'STARS';
+  
+  // Revenue
+  totalEntryRevenue: number;
+  totalViewerRevenue: number;
+  totalTips: number;
+  
+  // Viewers
+  viewers: string[]; // Array of viewer user IDs
+  viewerMinutes: Record<string, number>; // userId -> minutes watched
+  
+  // 100ms room info
+  roomId?: string; // 100ms room ID
+  
+  // Timestamps
+  scheduledAt?: Timestamp;
+  startedAt?: Timestamp;
+  endedAt?: Timestamp;
+  duration?: number; // Duration in seconds
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  
+  // Metadata
+  metadata?: {
+    [key: string]: unknown;
+  };
+}
+
+// ============================================================================
+// TRANSACTIONS COLLECTION
+// ============================================================================
+
+export interface FirestoreTransaction {
+  id: string; // Document ID
+  userId: string; // User who made the transaction
+  type: string; // Transaction type (call, liveparty_entry, tip, topup, battle_tip, battle_reward, etc.)
+  amount: number; // Transaction amount
+  currency: 'USD' | 'STARS';
+  status: 'pending' | 'completed' | 'failed';
+  description?: string;
+  
+  // Call-related fields
+  callId?: string;
+  callDuration?: number;
+  callRate?: number;
+  
+  // Battle-related fields
+  battleId?: string;
+  battleHostId?: string;
+  
+  // LiveParty-related fields
+  livePartyId?: string;
+  livePartyEntryFee?: number;
+  livePartyViewerMinutes?: number;
+  livePartyViewerRate?: number;
+  
+  // Payment fields
+  paymentId?: string;
+  ghlTransactionId?: string;
+  
+  // Timestamps
+  completedAt?: Timestamp;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  
+  // Metadata
+  metadata?: {
+    [key: string]: unknown;
+  };
+}
+
+export interface CreateTransactionData {
+  userId: string;
+  type: string;
+  amount: number;
+  currency: 'USD' | 'STARS';
+  callId?: string;
+  callDuration?: number;
+  callRate?: number;
+  battleId?: string;
+  battleHostId?: string;
+  livePartyId?: string;
+  livePartyEntryFee?: number;
+  livePartyViewerMinutes?: number;
+  livePartyViewerRate?: number;
+  paymentId?: string;
+  description?: string;
+  metadata?: {
+    [key: string]: unknown;
+  };
+}
+
+// ============================================================================
+// PAYMENTS COLLECTION
+// ============================================================================
+
+export interface FirestorePayment {
+  id: string; // Document ID
+  userId: string; // User who made the payment
+  amount: number; // Payment amount in cents
+  currency: 'USD' | 'STARS';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded' | 'cancelled';
+  
+  // Related entities
+  callId?: string;
+  livestreamId?: string;
+  transactionId?: string;
+  chatId?: string; // Chat room ID (for message unlock payments)
+  messageId?: string; // Message ID (for message unlock payments)
+  
+  // GHL integration
+  ghlInvoiceId?: string;
+  ghlTransactionId?: string;
+  ghlContactId?: string;
+  ghlLocationId?: string;
+  
+  // Payment method
+  paymentMethod?: string;
+  paymentMethodId?: string; // Payment method ID from payment provider
+  description?: string;
+
+  // Timestamps
+  completedAt?: Timestamp;
+  failedAt?: Timestamp;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  
+  // Metadata
+  metadata?: {
+    [key: string]: unknown;
+  };
+}
+
+// ============================================================================
+// TIPS COLLECTION
+// ============================================================================
+
+export interface FirestoreTip {
+  id: string; // Document ID
+  livestreamId?: string; // Livestream/LiveParty ID
+  hostId: string; // Host receiving the tip
+  tipperId: string; // User sending the tip
+  amount: number; // Tip amount in stars
+  currency: 'USD' | 'STARS';
+  message?: string; // Optional tip message
+  
+  // Timestamps
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  
+  // Metadata
+  metadata?: {
+    [key: string]: unknown;
+  };
+}
 
 // ============================================================================
 // USERS COLLECTION
@@ -6,10 +314,18 @@ import type { Timestamp } from 'firebase/firestore';
 
 export interface FirestoreUser {
   id: string; // Document ID (user UID)
+  uid?: string; // User UID (alias for id, for compatibility)
   phone?: string; // User phone number
   email?: string;
   displayName?: string;
   photoURL?: string;
+  provider?: string; // Auth provider (google, apple, facebook, phone, email)
+  verified?: boolean; // Email/phone verification status
+  trialStartDate?: Timestamp; // Trial start date
+  trialEndDate?: Timestamp; // Trial end date
+  bio?: string;
+  location?: { address?: string; city?: string; country?: string } | string;
+  interests?: string[];
   audioCallEnabled?: boolean;
   stars: number; // User's star balance
   tier: 'free' | 'basic' | 'premium' | 'enterprise' | 'litplus';
@@ -18,31 +334,17 @@ export interface FirestoreUser {
   ghlId?: string; // GHL contact ID
   ghlContactId?: string; // GHL contact ID (backward compatibility)
   ghlLocationId?: string; // GHL location ID
-  interests?: string[]; // User interests (from tags)
-  provider?: 'google' | 'apple' | 'facebook' | 'phone' | 'email' | 'anonymous';
-  verified?: boolean;
-  bio?: string;
-  location?: string | { address?: string; city?: string; country?: string };
-  trialStartDate?: Timestamp | Date | null;
-  trialEndDate?: Timestamp | Date | null;
   
-  // AI Companion fields
-  isAI?: boolean; // Flag to identify AI profiles
-  aiPersonality?: 'fun' | 'flirty' | 'supportive' | 'creative';
-  introScript?: string; // AI intro message
-  replyScript?: string; // AI reply template
-  dateOfBirth?: string; // DOB for age calculation (YYYY-MM-DD)
-  countryCode?: string; // ISO country code for flag
-  username?: string; // Unique username
-
   // Timestamps
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
   lastLogin?: Timestamp;
   lastSeen?: Timestamp;
-
+  
   // Metadata
-  metadata?: Record<string, unknown>;
+  metadata?: {
+    [key: string]: unknown;
+  };
 }
 
 // ============================================================================
@@ -61,9 +363,11 @@ export interface FirestoreChat {
   isGroup?: boolean; // Whether this is a group chat
   createdAt: Timestamp;
   updatedAt: Timestamp;
-
+  
   // Metadata
-  metadata?: Record<string, unknown>;
+  metadata?: {
+    [key: string]: unknown;
+  };
 }
 
 // ============================================================================
@@ -72,387 +376,87 @@ export interface FirestoreChat {
 
 export interface FirestoreMessage {
   id: string; // Document ID
-  chatId: string; // Chat this message belongs to
+  chatId: string; // Chat room ID
   senderId: string; // User ID of sender
-  content?: string; // Text content
-  type: 'text' | 'image' | 'video' | 'audio' | 'file'; // Message type
-  isLocked?: boolean; // Whether message is locked behind payment
-  unlockPrice?: number; // Price in cents to unlock
-  unlockCurrency?: string; // Default: 'USD'
-  ghlInvoiceId?: string; // GHL invoice ID for payment
-  unlockedBy?: string[] | Record<string, Timestamp>; // Array of user IDs or map of userId -> unlock timestamp
-  replyToId?: string; // ID of message this is replying to
-  editedAt?: Timestamp; // When message was last edited
-  timestamp?: Timestamp; // Alias for createdAt
-  isEdited?: boolean; // Whether message has been edited
-  senderName?: string; // Cached sender display name
-  senderAvatar?: string; // Cached sender avatar url
-  status?: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  senderName: string; // Display name of sender
+  senderAvatar?: string; // Avatar URL of sender
+  content: string; // Message content
+  text?: string; // Alternative text field (alias for content)
+  type: 'text' | 'image' | 'file' | 'system' | 'payment';
+  status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
+  timestamp: Timestamp; // Message timestamp
+  replyTo?: string; // ID of message being replied to
+  isEdited?: boolean; // Whether message was edited
+  editedAt?: Timestamp; // When message was edited
+  readBy?: Record<string, Timestamp>; // userId -> read timestamp
+  
+  // Lock/unlock functionality
+  isLocked?: boolean; // Whether message is locked (requires payment)
+  unlockPrice?: number; // Unlock price in cents
+  unlockCurrency?: 'USD' | 'STARS'; // Unlock currency
+  unlockedBy?: string[] | Record<string, boolean> | Record<string, Timestamp>; // Users who unlocked (array or map)
+  ghlInvoiceId?: string; // GHL invoice ID for unlock payment
+  attachments?: string[] | Array<{ url: string; type?: string; name?: string; size?: number }>; // Message attachments
 
-  // Attachments
-  attachments?: Array<{
-    id: string;
-    type: 'image' | 'video' | 'audio' | 'file';
-    url: string;
-    filename?: string;
-    name?: string; // alias used by UI
-    size?: number;
-    mimeType?: string;
-  }>;
-
+  createdAt: Timestamp | Date | number; // Flexible timestamp support
+  updatedAt?: Timestamp | Date | number;
+  
   // Metadata
-  metadata?: Record<string, unknown>;
+  metadata?: {
+    [key: string]: unknown;
+  };
 }
 
 // ============================================================================
-// WALLETS COLLECTION
+// WALLET COLLECTION
 // ============================================================================
 
 export interface FirestoreWallet {
-  id: string; // Document ID (same as user ID)
+  id: string; // Document ID (same as userId)
   userId: string; // User ID
-  stars: number; // Virtual currency (stars)
-  usd: number; // USD balance (in cents)
-  totalEarned: number; // Total stars earned (in stars)
-  totalSpent: number; // Total stars spent (in stars)
-  totalUsdSpent: number; // Total USD spent (in cents)
-  lastActivityAt?: Timestamp; // Last wallet activity
-  metadata?: Record<string, unknown>;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-}
-
-// ============================================================================
-// TRANSACTIONS COLLECTION
-// ============================================================================
-
-export interface FirestoreTransaction {
-  id: string; // Document ID
-  userId: string;
-  type: 'deposit' | 'withdrawal' | 'spend' | 'earn' | 'refund' | 'subscription' | 'topup' | 'call_cost' | 'message_unlock' | 'party_entry' | 'tip' | 'battle_tip' | 'liveparty_tip' | 'battle_reward' | 'call' | 'liveparty_viewer' | 'liveparty_entry';
-  amount: number; // Amount in stars or USD cents
-  currency: 'USD' | 'STARS';
-  status: 'pending' | 'completed' | 'failed' | 'refunded';
-  description?: string;
-  relatedEntityId?: string; // e.g., paymentId, callId, messageId, livestreamId
-  callId?: string;
-  callDuration?: number; // Duration in minutes
-  callRate?: number; // Rate in cents per minute
-  battleId?: string;
-  livepartyId?: string;
-  livePartyId?: string; // alias casing used in some routes
-  battleHostId?: string;
-  livePartyEntryFee?: number;
-  livePartyViewerMinutes?: number;
-  livePartyViewerRate?: number; // Rate per minute for viewer fees
-  paymentId?: string; // Associated payment ID
-  ghlTransactionId?: string; // GHL transaction ID
-  completedAt?: Timestamp;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  metadata?: Record<string, unknown>;
-}
-
-export interface CreateTransactionData {
-  userId: string;
-  type: FirestoreTransaction['type'];
-  amount: number;
-  currency: FirestoreTransaction['currency'];
-  description?: string;
-  callId?: string;
-  callDuration?: number;
-  callRate?: number; // Rate in cents per minute
-  battleId?: string;
-  battleHostId?: string;
-  livepartyId?: string;
-  livePartyId?: string; // alias casing used in some routes
-  livePartyEntryFee?: number;
-  livePartyViewerMinutes?: number;
-  livePartyViewerRate?: number; // Rate per minute for viewer fees
-  paymentId?: string; // Associated payment ID
-  relatedEntityId?: string;
-  metadata?: Record<string, unknown>;
-}
-
-// ============================================================================
-// TIPS COLLECTION
-// ============================================================================
-
-export interface FirestoreTip {
-  id: string; // Document ID
-  livestreamId?: string; // Live party ID
-  hostId: string; // Host who received the tip
-  tipperId: string; // User who sent the tip
-  amount: number; // Tip amount in stars
-  currency: 'USD' | 'STARS';
-  battleId?: string; // Battle ID if tip is for battle
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  metadata?: Record<string, unknown>;
-}
-
-// ============================================================================
-// LIVE PARTIES COLLECTION
-// ============================================================================
-
-export interface FirestoreLiveParty {
-  id: string; // Document ID
-  hostId: string;
-  roomId?: string; // 100ms room ID
-  status: 'scheduled' | 'live' | 'ended' | 'cancelled';
-  scheduledAt?: Timestamp;
-  startedAt?: Timestamp;
-  endedAt?: Timestamp;
-  duration?: number; // Duration in seconds
-  entryFee: number; // Entry fee in cents (USD) or stars
-  entryFeeCurrency: 'USD' | 'STARS';
-  viewerFeePerMinute?: number; // Optional per-minute viewer fee
-  viewerFeeCurrency?: 'USD' | 'STARS';
-  totalEntryRevenue: number;
-  totalViewerRevenue: number;
-  totalTips: number;
-  viewers: string[]; // Array of viewer user IDs
-  viewerMinutes: Record<string, number>; // userId -> minutes watched
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  metadata?: Record<string, unknown>;
-}
-
-// ============================================================================
-// LIVESTREAMS COLLECTION
-// ============================================================================
-
-export interface FirestoreLiveStream {
-  id: string; // Document ID
-  hostId: string; // User ID of the host
-  battleHostId?: string; // User ID of second host (for battle mode)
-
-  // Stream status
-  status: 'scheduled' | 'live' | 'ended' | 'cancelled';
-
-  // Stream info
-  title?: string;
-  description?: string;
-  thumbnailUrl?: string;
-
-  // Viewer metrics
-  viewerCount: number;
-  peakViewerCount: number;
-
-  // Battle mode
-  isBattleMode: boolean;
-
-  // 100ms room info
-  roomId?: string; // 100ms room ID
-
-  // Timestamps
-  scheduledAt?: Timestamp;
-  startedAt?: Timestamp;
-  endedAt?: Timestamp;
+  stars: number; // Star balance (integer)
+  usd: number; // USD balance in cents
+  totalEarned: number; // Total stars earned
+  totalSpent: number; // Total stars spent
+  totalUsdSpent: number; // Total USD spent in cents
+  lastActivityAt?: Timestamp; // Last wallet activity timestamp
   createdAt: Timestamp;
   updatedAt: Timestamp;
 
   // Metadata
-  metadata?: Record<string, unknown>;
-}
-
-// ============================================================================
-// MESSAGE CREATION DATA
-// ============================================================================
-
-export interface CreateMessageData {
-  chatId: string;
-  senderId: string;
-  content?: string;
-  type?: 'text' | 'image' | 'video' | 'audio' | 'file';
-  replyToId?: string;
-  senderName?: string; // Cached sender display name
-  senderAvatar?: string; // Cached sender photo URL
-  replyTo?: any; // Reply message data
-  attachments?: Array<{
-    id: string;
-    type: 'image' | 'video' | 'audio' | 'file';
-    url: string;
-    filename?: string;
-    size?: number;
-    mimeType?: string;
-  }>;
-  metadata?: Record<string, unknown>;
-}
-
-// ============================================================================
-// CALLS COLLECTION
-// ============================================================================
-
-export interface FirestoreCall {
-  id: string; // Document ID
-  roomId: string; // 100ms room ID
-  hostId: string; // User ID of host/caller
-  participantIds: string[]; // User IDs of participants
-  type: 'direct' | 'group' | 'sip';
-  callerId?: string; // Legacy fields for backward compatibility
-  receiverId?: string; // Legacy fields for backward compatibility
-  calleeId?: string; // Alias for receiverId
-  sipEnabled?: boolean;
-  sipPhoneNumber?: string;
-  status: 'initiating' | 'initiated' | 'ringing' | 'active' | 'ended' | 'failed' | 'missed';
-
-  // Timing and billing
-  startedAt?: Timestamp;
-  endedAt?: Timestamp;
-  duration?: number; // Duration in minutes
-  durationMins?: number; // Alias for duration
-  ratePerMinute?: number; // Rate in cents per minute
-  cost?: number; // Cost in cents
-  costCurrency?: 'USD' | 'STARS';
-  paymentStatus?: 'pending' | 'paid' | 'failed' | 'free_trial';
-  ghlInvoiceId?: string; // GHL invoice ID for payment
-
-  // Timestamps
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-
-  // Metadata
-  metadata?: Record<string, unknown>;
-}
-
-// ============================================================================
-// PAYMENTS COLLECTION
-// ============================================================================
-
-export interface FirestorePayment {
-  id: string; // Document ID
-  userId: string; // User who made the payment
-  callId?: string; // Associated call ID (for call payments)
-  chatId?: string; // Associated chat ID (for message unlocks)
-  messageId?: string; // Associated message ID (for message unlocks)
-  invoiceId?: string; // Invoice ID (alternative to callId)
-  amount: number; // Amount in cents or dollars
-  currency?: string; // Currency (USD, STARS, etc.)
-  status: 'pending' | 'processing' | 'paid' | 'completed' | 'failed' | 'refunded' | 'cancelled';
-  method?: string; // Payment method (ghl, stripe, wallet, etc.)
-  paymentMethod?: string; // Alias for method
-  paymentMethodId?: string; // Payment method ID
-
-  // GHL integration fields
-  ghlTransactionId?: string; // GHL transaction/invoice ID
-  ghlContactId?: string; // GHL contact ID
-  ghlLocationId?: string; // GHL location ID
-
-  // Status timestamps
-  completedAt?: Timestamp; // When payment was completed
-  failedAt?: Timestamp; // When payment failed
-
-  // Description and metadata
-  description?: string;
-  metadata?: Record<string, unknown>;
-
-  // Timestamps
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-}
-
-// ============================================================================
-// BATTLES COLLECTION
-// ============================================================================
-
-export interface FirestoreBattle {
-  id: string; // Document ID
-  hostId: string; // Primary host ID (for backward compatibility)
-  host1Id: string; // First host ID
-  host2Id?: string; // Second host ID (for battle mode)
-  participants?: string[]; // Array of participant user IDs
-  status: 'scheduled' | 'live' | 'ended' | 'cancelled';
-  winnerId?: string; // Winner user ID (if battle ended)
-
-  // Tips
-  host1Tips?: number; // Tips for host 1 (in stars)
-  host2Tips?: number; // Tips for host 2 (in stars)
-  totalTips?: number; // Total tips (in stars)
-
-  // Battle metrics
-  duration?: number; // Duration in seconds
-  peakViewers?: number; // Peak viewer count
-
-  // Timestamps
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-  startedAt?: Timestamp;
-  endedAt?: Timestamp;
-
-  // Metadata
-  metadata?: Record<string, unknown>;
+  metadata?: {
+    [key: string]: unknown;
+  };
 }
 
 export interface CreateWalletData {
   userId: string;
-  balance?: number;
-  stars?: number;
-}
-
-export interface UpdateWalletData {
-  userId?: string; // Optional - can be passed separately to updateWalletBalance
-  starsDelta?: number;
-  usdDelta?: number;
-  // Direct value updates (used in wallet.ts)
   stars?: number;
   usd?: number;
   totalEarned?: number;
   totalSpent?: number;
   totalUsdSpent?: number;
-  metadata?: Record<string, unknown>;
 }
 
-// ============================================================================
-// FLAMES COLLECTION (24h Stories)
-// ============================================================================
-
-export interface FirestoreFlame {
-  id: string; // Document ID
-  userId: string; // User who posted the flame
-  mediaUrl: string; // Firebase Storage URL or Bunny CDN URL
-  mediaType: 'image' | 'video'; // Media type
-  caption?: string; // Optional caption
-  thumbnailUrl?: string; // Thumbnail URL (for videos)
-  
-  // Video metadata (if mediaType is 'video')
-  guid?: string; // Bunny Stream video GUID
-  duration?: number; // Video duration in seconds
-  
-  // View tracking
-  viewCount?: number; // Number of views
-  viewedBy?: string[]; // User IDs who viewed this flame
-  
-  // Timestamps
-  createdAt: Timestamp;
-  expiresAt: Timestamp; // Auto-expires after 24h
-  
-  // Optional metadata
-  metadata?: Record<string, unknown>;
+export interface UpdateWalletData {
+  stars?: number;
+  usd?: number;
+  totalEarned?: number;
+  totalSpent?: number;
+  totalUsdSpent?: number;
+  metadata?: {
+    [key: string]: unknown;
+  };
 }
 
-// ============================================================================
-// LIKES COLLECTION
-// ============================================================================
-
-export interface FirestoreLike {
-  id: string; // Document ID (format: userId_targetUserId)
-  userId: string; // User who performed the action
-  targetUserId: string; // User being liked/passed
-  type: 'like' | 'pass'; // Action type
-  createdAt: Timestamp;
+export interface CreateMessageData {
+  chatId: string;
+  senderId: string;
+  senderName: string;
+  senderAvatar?: string;
+  content: string;
+  type?: 'text' | 'image' | 'file' | 'system' | 'payment';
+  replyTo?: string;
 }
 
-// ============================================================================
-// MATCHES COLLECTION
-// ============================================================================
-
-export interface FirestoreMatch {
-  id: string; // Document ID (format: sorted userIds joined with _)
-  userIds: [string, string]; // Tuple of matched user IDs (sorted)
-  status: 'active' | 'unmatched'; // Match status
-  createdAt: Timestamp;
-  metadata?: Record<string, unknown>;
-}
+// ... rest of existing code ...

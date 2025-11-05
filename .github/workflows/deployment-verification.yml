@@ -1,0 +1,161 @@
+name: Deployment Verification & Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - staging
+  push:
+    branches:
+      - staging
+      - main
+
+jobs:
+  # Job 1: Run QA Suite on Staging PR Merge
+  qa-staging:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'staging'
+    runs-on: ubuntu-latest
+    name: QA Suite - Staging Verification
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_APP_ENV: staging
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.STAGING_URL || 'https://staging-lit.dm2pay.netlify.app' }}
+
+      - name: Run QA verification suite
+        run: npm run qa:verify
+        env:
+          STAGING_URL: ${{ secrets.STAGING_URL || 'https://staging-lit.dm2pay.netlify.app' }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+
+      - name: Wait for Netlify deployment
+        run: |
+          echo "Waiting for Netlify staging deployment to complete..."
+          sleep 30
+
+      - name: Run E2E tests on staging
+        run: npm run test:e2e:staging
+        if: always()
+        env:
+          STAGING_URL: ${{ secrets.STAGING_URL || 'https://staging-lit.dm2pay.netlify.app' }}
+
+      - name: Upload QA report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: qa-report-staging
+          path: |
+            qa-report-*.md
+            *.log
+
+  # Job 2: Merge staging → main after verification
+  merge-to-production:
+    needs: qa-staging
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'staging'
+    runs-on: ubuntu-latest
+    name: Merge to Production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Get version from package.json
+        id: get_version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Release version: $VERSION"
+
+      - name: Merge staging → main
+        run: |
+          git fetch origin
+          git checkout main
+          git pull origin main
+          git merge origin/staging --no-ff -m "Release: ${{ steps.get_version.outputs.version }}"
+          git push origin main
+
+      - name: Create release tag
+        run: |
+          VERSION="${{ steps.get_version.outputs.version }}"
+          git tag -a "v${VERSION}" -m "Production release ${VERSION}"
+          git push origin "v${VERSION}"
+
+      - name: Generate release summary
+        run: npm run release:summary
+        env:
+          VERSION: ${{ steps.get_version.outputs.version }}
+          GITHUB_SHA: ${{ github.sha }}
+
+      - name: Upload release summary
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-summary
+          path: release-summary-*.md
+
+  # Job 3: Notify on production deployment
+  notify-production:
+    needs: merge-to-production
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'staging'
+    runs-on: ubuntu-latest
+    name: Production Deployment Notification
+    
+    steps:
+      - name: Download release summary
+        uses: actions/download-artifact@v3
+        with:
+          name: release-summary
+
+      - name: Get version
+        id: get_version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.get_version.outputs.version }}
+          name: Release v${{ steps.get_version.outputs.version }}
+          body_path: release-summary-*.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify team
+        run: |
+          echo "✅ Production deployment succeeded!"
+          echo "Version: ${{ steps.get_version.outputs.version }}"
+          echo "Tag: v${{ steps.get_version.outputs.version }}"
+          # Add Slack/Discord/email notification here if needed
+          # Example: curl -X POST $SLACK_WEBHOOK_URL -d "{\"text\":\"Production deployment v${{ steps.get_version.outputs.version }} succeeded\"}"
+

@@ -22,7 +22,6 @@ export const metadata: Metadata = {
   title: "Lit.it Chat - Real-time Chat Application",
   description: "A modern, real-time chat application built with Next.js",
   manifest: "/manifest.json",
-  themeColor: "#FF5E3A",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

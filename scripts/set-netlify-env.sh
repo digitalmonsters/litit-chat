@@ -1,37 +1,36 @@
 #!/bin/bash
+# ================================================
+# 🔥 Lit.it – Netlify Environment Sync Script
+# Push all env vars from .env.local to Netlify site
+# ================================================
 
-# -------------------------------------
-# Netlify ENV Sync Script
-# Reads .env.local and uploads vars
-# -------------------------------------
+set -e
 
-ENV_FILE=".env.local"
-
-if [ ! -f "$ENV_FILE" ]; then
-  echo "❌  No .env.local file found!"
+if [ ! -f .env.local ]; then
+  echo "❌  .env.local not found. Please make sure it exists in project root."
   exit 1
 fi
 
-# Get current linked site info
-echo "─────────────────────────────"
-echo "🔍 Checking Netlify project link..."
-netlify status
+if ! command -v netlify &> /dev/null; then
+  echo "⚙️  Installing Netlify CLI..."
+  npm install -g netlify-cli
+fi
 
-echo "─────────────────────────────"
+echo "🔐  Checking Netlify authentication..."
+netlify status || netlify login
+
+if [ ! -d ".netlify" ]; then
+  echo "🔗  Linking local repo to Netlify..."
+  netlify link
+fi
+
 echo "🚀  Syncing environment variables from .env.local to Netlify..."
-
 while IFS='=' read -r key value; do
-  # skip comments or blank lines
-  [[ $key =~ ^#.*$ || -z "$key" ]] && continue
-  # trim spaces
-  key=$(echo "$key" | xargs)
-  value=$(echo "$value" | xargs)
-  # remove quotes around values if any
-  value=$(echo "$value" | sed -e 's/^"//' -e 's/"$//')
+  if [[ -n "$key" && ! "$key" =~ ^# ]]; then
+    echo "📦  Setting $key..."
+    netlify env:set "$key" "${value}"
+  fi
+done < .env.local
 
-  echo "📦  Setting $key..."
-  netlify env:set "$key" "$value" --context all
-done < "$ENV_FILE"
-
-echo "✅  All environment variables uploaded to Netlify!"
+echo "✅  All environment variables have been uploaded to Netlify!"
 echo "🔎  Run 'netlify env:list' to verify."

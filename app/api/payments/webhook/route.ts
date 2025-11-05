@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
     const paymentSnap = await getDocs(paymentQuery);
 
     let paymentRef;
-    let paymentData: Partial<FirestorePayment>;
+    let paymentData: Partial<FirestorePayment> & { failedAt?: Timestamp };
 
     if (!paymentSnap.empty) {
       // Update existing payment
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
       paymentData = {
         status: paymentStatus,
         amount: payment.amount,
-        currency: payment.currency,
+        currency: payment.currency as 'USD' | 'STARS',
         updatedAt: serverTimestamp() as Timestamp,
         metadata: {
           ...paymentSnap.docs[0].data().metadata,
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
         id: paymentRef.id,
         userId: '', // Will be set when we find user
         amount: payment.amount,
-        currency: payment.currency,
+        currency: payment.currency as 'USD' | 'STARS',
         status: paymentStatus,
         paymentMethod: 'ghl',
         ghlTransactionId: payment.id,
@@ -399,6 +399,8 @@ async function unlockMessageForUser(
   const messageData = messageSnap.data() as FirestoreMessage;
   const unlockedBy: string[] = Array.isArray(messageData.unlockedBy) 
     ? messageData.unlockedBy 
+    : messageData.unlockedBy && typeof messageData.unlockedBy === 'object'
+    ? Object.keys(messageData.unlockedBy)
     : [];
 
   if (!unlockedBy.includes(userId)) {
@@ -632,7 +634,7 @@ async function handleInvoiceFailed(invoice: {
         const userDoc = userSnap.docs[0];
         userId = userDoc.id;
         const userData = userDoc.data() as FirestoreUser;
-        userEmail = userData.email ?? null;
+        userEmail = userData.email || null;
       }
     }
 
@@ -643,7 +645,7 @@ async function handleInvoiceFailed(invoice: {
 
       if (userSnap.exists()) {
         const userData = userSnap.data() as FirestoreUser;
-        userEmail = userData.email ?? null;
+        userEmail = userData.email || null;
 
         // Generate reactivation link
         const reactivationToken = generateReactivationToken(userId);

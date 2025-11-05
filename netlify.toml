@@ -1,7 +1,82 @@
+# ============================================
+# 🚀 Lit.it Netlify Deployment Configuration
+# ============================================
+
 [build]
-  command = "npm run build"
-  publish = ".next"
+  command   = "npm run build"
+  publish   = ".next"
+  functions = "netlify/functions"
 
 [build.environment]
-  SECRETS_SCAN_SMART_DETECTION_ENABLED = "false"
-  SECRETS_SCAN_SMART_DETECTION_OMIT_VALUES = "true"
+  NODE_VERSION = "20"
+  NPM_FLAGS = "--legacy-peer-deps"
+  NEXT_TELEMETRY_DISABLED = "1"
+
+# --------------------------------------------
+# Production context (main branch)
+# --------------------------------------------
+[context.production]
+  branch = "main"
+
+  [context.production.environment]
+    NEXT_PUBLIC_APP_ENV = "production"
+    NEXT_PUBLIC_SITE_URL = "https://lit.dm2pay.com"
+
+  [context.production.deploy]
+    command = "npm run build"
+
+  [[context.production.plugins]]
+    package = "@netlify/plugin-nextjs"
+
+# --------------------------------------------
+# Staging context (staging branch)
+# --------------------------------------------
+[context.staging]
+  branch = "staging"
+
+  [context.staging.environment]
+    NEXT_PUBLIC_APP_ENV = "staging"
+    NEXT_PUBLIC_SITE_URL = "https://staging-lit.dm2pay.netlify.app"
+
+  [context.staging.deploy]
+    command = "npm run build"
+
+  [[context.staging.plugins]]
+    package = "@netlify/plugin-nextjs"
+
+# --------------------------------------------
+# Development context (develop branch)
+# --------------------------------------------
+[context.develop]
+  branch = "develop"
+
+  [context.develop.environment]
+    NEXT_PUBLIC_APP_ENV = "develop"
+    NEXT_PUBLIC_SITE_URL = "https://develop-lit.dm2pay.netlify.app"
+
+  [context.develop.deploy]
+    command = "npm run build"
+
+  [[context.develop.plugins]]
+    package = "@netlify/plugin-nextjs"
+
+# --------------------------------------------
+# Redirects (SPA fallback)
+# --------------------------------------------
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# --------------------------------------------
+# Security Headers (for PWA + SEO)
+# --------------------------------------------
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(self)"

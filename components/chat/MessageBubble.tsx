@@ -86,87 +86,87 @@ export default function MessageBubble({
       animate="visible"
       variants={flameFadeIn}
       className={cn(
-        'flex items-end gap-2 px-4 py-1.5',
+        'flex items-end gap-2 px-4 py-2',
         isOwn ? 'flex-row-reverse' : 'flex-row',
         className
       )}
     >
       {/* Avatar */}
       {showAvatar && !isOwn && (
-        <motion.div 
-          className="flex-shrink-0"
-          whileHover={{ scale: 1.1 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 10 }}
-        >
+        <div className="flex-shrink-0">
           {message.senderAvatar ? (
             <img
               src={message.senderAvatar}
-              alt={message.senderName ?? 'User'}
-              className="w-9 h-9 rounded-full object-cover ring-2 ring-[#FF5E3A]/20"
+              alt={message.senderName}
+              className="w-8 h-8 rounded-full object-cover"
             />
           ) : (
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#FF5E3A] to-[#FF9E57] flex items-center justify-center ring-2 ring-[#FF5E3A]/20">
-              <span className="text-white text-sm font-semibold">
-                {message.senderName?.charAt(0)?.toUpperCase() ?? '?'}
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF5E3A] to-[#FF9E57] flex items-center justify-center">
+              <span className="text-white text-xs font-semibold">
+                {message.senderName.charAt(0).toUpperCase()}
               </span>
             </div>
           )}
-        </motion.div>
+        </div>
       )}
 
       {/* Message content */}
       <div
         className={cn(
-          'flex flex-col gap-0.5',
+          'flex flex-col gap-1',
           isOwn ? 'items-end' : 'items-start',
-          showAvatar && !isOwn ? 'max-w-[70%]' : 'max-w-[75%]'
+          showAvatar && !isOwn ? 'max-w-[70%]' : 'max-w-[80%]'
         )}
       >
-        {!isOwn && showAvatar && (
-          <span className="text-xs font-medium text-gray-400 ml-3 mb-0.5">
-            {message.senderName ?? 'Unknown'}
+        {!isOwn && (
+          <span className="text-xs font-medium text-gray-400">
+            {message.senderName}
           </span>
         )}
 
-        {/* Message bubble - Snapchat style with tail */}
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+        {/* Message bubble */}
+        <div
           className={cn(
-            'relative rounded-3xl px-4 py-2.5 shadow-lg',
+            'rounded-2xl px-4 py-2 shadow-sm',
             isOwn
-              ? 'bg-gradient-to-r from-[#FF5E3A] to-[#FF9E57] text-white rounded-br-md'
-              : 'bg-gray-800 text-white rounded-bl-md'
+              ? 'bg-gradient-to-r from-[#FF5E3A] to-[#FF9E57] text-white'
+              : 'bg-gray-800 text-white'
           )}
         >
           {/* Text content */}
           {message.content && (
-            <p className="break-words text-[15px] leading-relaxed">{message.content}</p>
+            <p className="break-words text-sm leading-relaxed">{message.content}</p>
           )}
 
           {/* Image attachment */}
-          {message.attachments?.some((att) => att.type.startsWith('image/')) && (
-            <div className={cn('space-y-2', message.content && 'mt-2')}>
+          {message.attachments?.some((att) => {
+            const attachment = typeof att === 'string' ? { url: att, type: 'image' } : att;
+            return attachment.type?.startsWith('image/');
+          }) && (
+            <div className="mt-2 space-y-2">
               {message.attachments
-                .filter((att) => att.type.startsWith('image/'))
+                ?.map((att) => typeof att === 'string' ? { url: att, type: 'image', name: 'Image' } : att)
+                .filter((att) => att.type?.startsWith('image/'))
                 .map((att, idx) => (
-                  <motion.img
+                  <img
                     key={idx}
                     src={att.url}
-                    alt={att.name}
-                    className="max-w-full rounded-2xl cursor-pointer"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    alt={att.name || 'Image'}
+                    className="max-w-full rounded-lg"
                   />
                 ))}
             </div>
           )}
 
           {/* Video attachment */}
-          {message.attachments?.some((att) => att.type.startsWith('video/')) && (
+          {message.attachments?.some((att) => {
+            const attachment = typeof att === 'string' ? { url: att, type: 'video' } : att;
+            return attachment.type?.startsWith('video/');
+          }) && (
             <div className="mt-2 space-y-2">
               {message.attachments
-                .filter((att) => att.type.startsWith('video/'))
+                ?.map((att) => typeof att === 'string' ? { url: att, type: 'video', name: 'Video' } : att)
+                .filter((att) => att.type?.startsWith('video/'))
                 .map((att, idx) => (
                   <video
                     key={idx}
@@ -179,10 +179,14 @@ export default function MessageBubble({
           )}
 
           {/* Audio attachment */}
-          {message.attachments?.some((att) => att.type.startsWith('audio/')) && (
+          {message.attachments?.some((att) => {
+            const attachment = typeof att === 'string' ? { url: att, type: 'audio' } : att;
+            return attachment.type?.startsWith('audio/');
+          }) && (
             <div className="mt-2 space-y-2">
               {message.attachments
-                .filter((att) => att.type.startsWith('audio/'))
+                ?.map((att) => typeof att === 'string' ? { url: att, type: 'audio', name: 'Audio' } : att)
+                .filter((att) => att.type?.startsWith('audio/'))
                 .map((att, idx) => (
                   <audio key={idx} src={att.url} controls className="w-full" />
                 ))}
@@ -190,20 +194,18 @@ export default function MessageBubble({
           )}
 
           {/* File attachment */}
-          {message.attachments?.some(
-            (att) =>
-              !att.type.startsWith('image/') &&
-              !att.type.startsWith('video/') &&
-              !att.type.startsWith('audio/')
-          ) && (
+          {message.attachments?.some((att) => {
+            const attachment = typeof att === 'string' ? { url: att, type: 'file' } : att;
+            const type = attachment.type || '';
+            return !type.startsWith('image/') && !type.startsWith('video/') && !type.startsWith('audio/');
+          }) && (
             <div className="mt-2 space-y-2">
               {message.attachments
-                .filter(
-                  (att) =>
-                    !att.type.startsWith('image/') &&
-                    !att.type.startsWith('video/') &&
-                    !att.type.startsWith('audio/')
-                )
+                ?.map((att) => typeof att === 'string' ? { url: att, type: 'file', name: 'File' } : att)
+                .filter((att) => {
+                  const type = att.type || '';
+                  return !type.startsWith('image/') && !type.startsWith('video/') && !type.startsWith('audio/');
+                })
                 .map((att, idx) => (
                   <a
                     key={idx}
@@ -214,7 +216,7 @@ export default function MessageBubble({
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
-                    <span className="text-sm">{att.name}</span>
+                    <span className="text-sm">{att.name || 'File'}</span>
                   </a>
                 ))}
             </div>
@@ -224,29 +226,29 @@ export default function MessageBubble({
           {message.isEdited && (
             <span className="ml-2 text-xs opacity-70">(edited)</span>
           )}
-        </motion.div>
+        </div>
 
         {/* Timestamp and status */}
-        {showTimestamp && (
-          <div className={cn('flex items-center gap-1.5 mt-0.5', isOwn ? 'ml-3' : 'mr-3')}>
-            <span className="text-[11px] text-gray-500 font-medium">
+        <div className="flex items-center gap-2">
+          {showTimestamp && (
+            <span className="text-xs text-gray-500">
               {formatTime(message.timestamp)}
             </span>
-            {isOwn && message.status && (
-              <span className="text-xs text-gray-500">
-                {message.status === 'sending' && '⏳'}
-                {message.status === 'sent' && '✓'}
-                {message.status === 'delivered' && '✓✓'}
-                {message.status === 'read' && <span className="text-[#FF5E3A]">✓✓</span>}
-                {message.status === 'failed' && '✗'}
-              </span>
-            )}
-          </div>
-        )}
+          )}
+          {isOwn && message.status && (
+            <span className="text-xs text-gray-500">
+              {message.status === 'sending' && '⏳'}
+              {message.status === 'sent' && '✓'}
+              {message.status === 'delivered' && '✓✓'}
+              {message.status === 'read' && '✓✓'}
+              {message.status === 'failed' && '✗'}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Spacer for own messages */}
-      {showAvatar && isOwn && <div className="h-9 w-9 flex-shrink-0" />}
+      {showAvatar && isOwn && <div className="h-8 w-8 flex-shrink-0" />}
     </motion.div>
   );
 }
