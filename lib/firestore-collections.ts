@@ -25,6 +25,15 @@ export interface FirestoreUser {
   location?: string | { address?: string; city?: string; country?: string };
   trialStartDate?: Timestamp | Date | null;
   trialEndDate?: Timestamp | Date | null;
+  
+  // AI Companion fields
+  isAI?: boolean; // Flag to identify AI profiles
+  aiPersonality?: 'fun' | 'flirty' | 'supportive' | 'creative';
+  introScript?: string; // AI intro message
+  replyScript?: string; // AI reply template
+  dateOfBirth?: string; // DOB for age calculation (YYYY-MM-DD)
+  countryCode?: string; // ISO country code for flag
+  username?: string; // Unique username
 
   // Timestamps
   createdAt?: Timestamp;

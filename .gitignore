@@ -40,6 +40,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Nested clone directory
-litit-chat/
-scripts/seed/
+# Firebase admin credentials
+scripts/seed/serviceAccountKey.json

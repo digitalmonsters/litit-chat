@@ -9,14 +9,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { collection, query, where, orderBy, limit, onSnapshot, Timestamp } from 'firebase/firestore';
+import { getFirestoreInstance, COLLECTIONS } from '@/lib/firebase';
+import DiscoverGrid from './DiscoverGrid';
 import UserCard from './UserCard';
 import ProfileModal from './ProfileModal';
 import SwipeableCardStack from './SwipeableCardStack';
 import type { FirestoreUser } from '@/lib/firestore-collections';
-import { flameFadeIn, flameStagger, flameStaggerItem } from '@/lib/flame-transitions';
+import { flameFadeIn } from '@/lib/flame-transitions';
 import { cn } from '@/lib/utils';
-import { useUsersPresence } from '@/lib/realtime-users';
-import { SkeletonCard } from '@/components/ui/SkeletonLoader';
 
 type TabType = 'recent' | 'online' | 'popular';
 
@@ -28,16 +29,11 @@ const tabs: Array<{ id: TabType; label: string }> = [
 
 export default function DiscoverFeed() {
   const [activeTab, setActiveTab] = useState<TabType>('recent');
+  const [users, setUsers] = useState<FirestoreUser[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<FirestoreUser | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-
-  // Use realtime users hook for instant updates
-  const { users, loading } = useUsersPresence({
-    filter: activeTab === 'online' ? 'online' : activeTab === 'recent' ? 'recent' : 'all',
-    limitCount: 20,
-    verifiedOnly: true,
-  });
 
   // Detect mobile viewport
   useEffect(() => {
@@ -48,6 +44,68 @@ export default function DiscoverFeed() {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Real-time Firestore listener based on active tab
+  useEffect(() => {
+    setLoading(true);
+    const db = getFirestoreInstance();
+    const usersRef = collection(db, COLLECTIONS.USERS);
+    
+    let q;
+    
+    switch (activeTab) {
+      case 'recent':
+        // Who Just Joined (order by createdAt desc)
+        q = query(
+          usersRef,
+          where('verified', '==', true),
+          orderBy('createdAt', 'desc'),
+          limit(20)
+        );
+        break;
+      case 'online':
+        // Who's Online (lastSeen within 5 minutes)
+        const fiveMinutesAgo = Timestamp.fromMillis(Date.now() - 5 * 60 * 1000);
+        q = query(
+          usersRef,
+          where('verified', '==', true),
+          where('lastSeen', '>=', fiveMinutesAgo),
+          orderBy('lastSeen', 'desc'),
+          limit(20)
+        );
+        break;
+      case 'popular':
+        // Popular (by updatedAt for now - can be enhanced with followers/engagement)
+        q = query(
+          usersRef,
+          where('verified', '==', true),
+          orderBy('updatedAt', 'desc'),
+          limit(20)
+        );
+        break;
+      default:
+        q = query(usersRef, where('verified', '==', true), limit(20));
+    }
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const fetchedUsers = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as FirestoreUser[];
+        setUsers(fetchedUsers);
+        setLoading(false);
+      },
+      (error) => {
+        // eslint-disable-next-line no-console
+        console.error('Error fetching users:', error);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [activeTab]);
 
   const handleUserClick = (user: FirestoreUser) => {
     setSelectedUser(user);
@@ -96,28 +154,9 @@ export default function DiscoverFeed() {
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         {loading ? (
-          <motion.div
-            variants={flameStagger}
-            initial="initial"
-            animate="animate"
-            className={cn(
-              'grid gap-4',
-              'md:grid-cols-2',
-              'lg:grid-cols-3',
-              'xl:grid-cols-3'
-            )}
-          >
-            {Array.from({ length: 6 }).map((_, i) => (
-              <motion.div
-                key={i}
-                variants={flameStaggerItem}
-                initial="initial"
-                animate="animate"
-              >
-                <SkeletonCard />
-              </motion.div>
-            ))}
-          </motion.div>
+          <div className="flex items-center justify-center h-full">
+            <div className="w-12 h-12 border-4 border-[#FF5E3A] border-t-transparent rounded-full animate-spin" />
+          </div>
         ) : users.length === 0 ? (
           <motion.div
             initial="hidden"
@@ -150,35 +189,36 @@ export default function DiscoverFeed() {
           </AnimatePresence>
         ) : (
           // Desktop: Grid layout (3 columns)
-          <motion.div
-            key={activeTab}
-            variants={flameStagger}
-            initial="initial"
-            animate="animate"
-            className={cn(
-              'grid gap-4',
-              // Tablet: 2 columns
-              'md:grid-cols-2',
-              // Desktop: 3 columns (as requested)
-              'lg:grid-cols-3',
-              // Large desktop: keep 3 columns
-              'xl:grid-cols-3'
-            )}
-            style={{ willChange: 'transform, opacity' }}
-          >
-            <AnimatePresence mode="popLayout">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ 
+                duration: 0.3,
+                ease: [0.4, 0, 0.2, 1], // Custom easing for 60fps
+              }}
+              className={cn(
+                'grid gap-4',
+                // Tablet: 2 columns
+                'md:grid-cols-2',
+                // Desktop: 3 columns (as requested)
+                'lg:grid-cols-3',
+                // Large desktop: keep 3 columns
+                'xl:grid-cols-3'
+              )}
+              style={{ willChange: 'transform, opacity' }}
+            >
               {users.map((user, index) => (
                 <motion.div
                   key={user.id}
-                  layout
-                  variants={flameStaggerItem}
-                  initial="initial"
-                  animate="animate"
-                  exit={{ opacity: 0, scale: 0.8, y: -20 }}
-                  transition={{
-                    type: 'spring',
-                    stiffness: 400,
-                    damping: 25,
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ 
+                    duration: 0.3,
+                    delay: index * 0.05, // Stagger animation
+                    ease: [0.4, 0, 0.2, 1],
                   }}
                   style={{ willChange: 'transform, opacity' }}
                 >
@@ -188,8 +228,8 @@ export default function DiscoverFeed() {
                   />
                 </motion.div>
               ))}
-            </AnimatePresence>
-          </motion.div>
+            </motion.div>
+          </AnimatePresence>
         )}
       </div>
 
