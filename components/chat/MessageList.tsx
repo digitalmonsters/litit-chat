@@ -2,12 +2,12 @@
 
 import React, { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import type { Message } from '@/types/chat';
+import type { FirestoreMessage } from '@/lib/firestore-collections';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
 
 export interface MessageListProps {
-  messages: Message[];
+  messages: FirestoreMessage[];
   currentUserId: string;
   isTyping?: boolean;
   typingUser?: string;
@@ -67,9 +67,11 @@ export default function MessageList({
               showAvatar={showAvatar}
               showTimestamp={
                 index === messages.length - 1 ||
-                messages[index + 1].timestamp.getTime() -
-                  message.timestamp.getTime() >
-                  300000
+                (messages[index + 1]?.timestamp?.toMillis &&
+                  message.timestamp?.toMillis &&
+                  messages[index + 1].timestamp.toMillis() -
+                    message.timestamp.toMillis() >
+                    300000)
               }
             />
           );

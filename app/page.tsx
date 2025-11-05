@@ -1,65 +1,145 @@
-import Image from "next/image";
+'use client';
+
+/**
+ * Home Page with Auth Flow
+ * 
+ * Flow: Splash → IntroCarousel → Login → ProfileSetup → Discover
+ */
+
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import { Splash, IntroCarousel } from '@/components/splash';
+import { useAuth } from '@/contexts/AuthContext';
+import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
+import ChatContainer from '@/components/layout/ChatContainer';
+import type { ChatRoom, User } from '@/types/chat';
+import type { FirestoreMessage } from '@/lib/firestore-collections';
 
 export default function Home() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+  const { user, loading: authLoading, isProfileComplete } = useAuth();
+  const router = useRouter();
+  
+  const [showSplash, setShowSplash] = useState(true);
+  const [showIntro, setShowIntro] = useState(false);
+  const [showApp, setShowApp] = useState(false);
+
+  // Check if user has seen intro before
+  useEffect(() => {
+    const checkIntroStatus = () => {
+      const hasSeenIntro = localStorage.getItem('litit-has-seen-intro');
+      if (hasSeenIntro === 'true') {
+        setShowSplash(false);
+        setShowIntro(false);
+      }
+    };
+    checkIntroStatus();
+  }, []);
+
+  // Handle auth state and routing
+  useEffect(() => {
+    if (authLoading) return;
+
+    // If user is logged in, check profile completion
+    if (user) {
+      if (!isProfileComplete) {
+        // Redirect to profile setup
+        router.push('/onboarding/profile');
+        return;
+      } else {
+        // User has complete profile, show app
+        // Use setTimeout to avoid setState in effect
+        setTimeout(() => {
+          setShowSplash(false);
+          setShowIntro(false);
+          setShowApp(true);
+        }, 0);
+        return;
+      }
+    }
+
+    // User not logged in, show login flow after intro
+    if (!showSplash && !showIntro && !user) {
+      router.push('/auth/login');
+    }
+  }, [user, authLoading, isProfileComplete, showSplash, showIntro, router]);
+
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+    setShowIntro(true);
+  };
+
+  const handleIntroComplete = () => {
+    localStorage.setItem('litit-has-seen-intro', 'true');
+    setShowIntro(false);
+    
+    // If user is not logged in, redirect to login
+    if (!user) {
+      router.push('/auth/login');
+    }
+  };
+
+  // Mock data for demonstration
+  const mockUser: User = {
+    id: user?.uid || '1',
+    name: user?.displayName || 'User',
+    status: 'online',
+  };
+
+  const mockRooms: ChatRoom[] = [];
+  const mockMessages: FirestoreMessage[] = [];
+
+  // Show loading state during auth check
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#1E1E1E] flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-[#FF5E3A] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Show splash/intro if user hasn't seen them
+  if (showSplash || showIntro) {
+    return (
+      <AnimatePresence mode="wait">
+        {showSplash && (
+          <Splash
+            key="splash"
+            onComplete={handleSplashComplete}
+            duration={2500}
+          />
+        )}
+
+        {!showSplash && showIntro && (
+          <IntroCarousel
+            key="intro"
+            onComplete={handleIntroComplete}
+          />
+        )}
+      </AnimatePresence>
+    );
+  }
+
+  // Show app if user is logged in and profile is complete
+  if (user && isProfileComplete && showApp) {
+    return (
+      <ResponsiveLayout>
+        <ChatContainer
+          rooms={mockRooms}
+          messages={mockMessages}
+          currentUser={mockUser}
+          isConnected={false}
+          onSendMessage={() => {}}
+          onRoomSelect={() => {}}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </ResponsiveLayout>
+    );
+  }
+
+  // Default: show loading
+  return (
+    <div className="min-h-screen bg-[#1E1E1E] flex items-center justify-center">
+      <div className="w-12 h-12 border-4 border-[#FF5E3A] border-t-transparent rounded-full animate-spin" />
     </div>
   );
 }

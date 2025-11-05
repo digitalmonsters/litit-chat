@@ -17,7 +17,7 @@ export default function Input({
   id,
   ...props
 }: InputProps) {
-  const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+  const [inputId] = React.useState(() => id || `input-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
 
   return (
     <div className="w-full">

@@ -1,6 +1,13 @@
 'use client';
 
+/**
+ * Typing Indicator Component
+ * 
+ * Shows animated typing indicator
+ */
+
 import React from 'react';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 export interface TypingIndicatorProps {
@@ -8,42 +15,33 @@ export interface TypingIndicatorProps {
   className?: string;
 }
 
-export default function TypingIndicator({
-  userName,
-  className,
-}: TypingIndicatorProps) {
+export default function TypingIndicator({ userName, className }: TypingIndicatorProps) {
   return (
-    <div
-      className={cn(
-        'flex items-center gap-2 px-4 py-2',
-        className
-      )}
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      className={cn('flex items-center gap-2 px-4 py-2', className)}
     >
-      <div className="flex gap-1 rounded-full bg-zinc-100 px-4 py-2 dark:bg-zinc-800">
-        <span
-          className="h-2 w-2 animate-pulse rounded-full bg-zinc-400"
-          style={{ animationDelay: '0ms' }}
-        />
-        <span
-          className="h-2 w-2 animate-pulse rounded-full bg-zinc-400"
-          style={{ animationDelay: '150ms' }}
-        />
-        <span
-          className="h-2 w-2 animate-pulse rounded-full bg-zinc-400"
-          style={{ animationDelay: '300ms' }}
-        />
+      <div className="flex gap-1">
+        {[0, 1, 2].map((i) => (
+          <motion.div
+            key={i}
+            className="w-2 h-2 bg-gray-500 rounded-full"
+            animate={{
+              y: [0, -8, 0],
+            }}
+            transition={{
+              duration: 0.6,
+              repeat: Infinity,
+              delay: i * 0.2,
+            }}
+          />
+        ))}
       </div>
       {userName && (
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">
-          {userName} is typing...
-        </span>
+        <span className="text-sm text-gray-400">{userName} is typing...</span>
       )}
-    </div>
+    </motion.div>
   );
 }
-
-
-
-
-
-

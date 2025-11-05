@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils';
 import type { ChatRoom, User } from '@/types/chat';
 import Avatar from '../chat/Avatar';
 import ConnectionStatus from '../chat/ConnectionStatus';
-import Button from '../ui/Button';
 
 export interface HeaderProps {
   room?: ChatRoom | null;
@@ -13,6 +12,7 @@ export interface HeaderProps {
   isConnected?: boolean;
   onSettingsClick?: () => void;
   onProfileClick?: () => void;
+  onMenuClick?: () => void;
   className?: string;
 }
 
@@ -22,16 +22,38 @@ export default function Header({
   isConnected = false,
   onSettingsClick,
   onProfileClick,
+  onMenuClick,
   className,
 }: HeaderProps) {
   return (
     <header
       className={cn(
-        'flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900',
+        'flex items-center justify-between border-b border-zinc-800/50 bg-[#1E1E1E] px-4 py-3',
         className
       )}
     >
       <div className="flex items-center gap-3">
+        {onMenuClick && (
+          <button
+            onClick={onMenuClick}
+            className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800/50 hover:text-[#FF9E57] lg:hidden"
+            title="Menu"
+          >
+            <svg
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+        )}
         {room ? (
           <>
             <Avatar
@@ -40,11 +62,11 @@ export default function Header({
               size="md"
             />
             <div>
-              <h2 className="font-semibold text-zinc-900 dark:text-zinc-100">
+              <h2 className="font-semibold text-zinc-100">
                 {room.name}
               </h2>
               {room.description && (
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="text-xs text-zinc-400">
                   {room.description}
                 </p>
               )}
@@ -52,7 +74,7 @@ export default function Header({
           </>
         ) : (
           <div>
-            <h2 className="font-semibold text-zinc-900 dark:text-zinc-100">
+            <h2 className="font-semibold text-zinc-100 bg-gradient-to-r from-[#FF5E3A] to-[#FF9E57] bg-clip-text text-transparent">
               FireChat
             </h2>
             <ConnectionStatus isConnected={isConnected} />
@@ -64,7 +86,7 @@ export default function Header({
         {onSettingsClick && (
           <button
             onClick={onSettingsClick}
-            className="rounded-lg p-2 text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+            className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800/50 hover:text-[#FF9E57]"
             title="Settings"
           >
             <svg

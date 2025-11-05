@@ -1,31 +1,37 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Lit.it Brand Colors */
+  --background: #1E1E1E;
+  --foreground: #ededed;
   
-  /* Chat colors */
-  --chat-primary: #6366f1;
-  --chat-primary-dark: #4f46e5;
-  --chat-secondary: #8b5cf6;
-  --chat-accent: #ec4899;
+  /* Flame gradient colors */
+  --flame-primary: #FF5E3A;
+  --flame-secondary: #FF9E57;
+  --flame-gradient: linear-gradient(135deg, #FF5E3A 0%, #FF9E57 100%);
+  
+  /* Chat colors using Lit.it palette */
+  --chat-primary: #FF5E3A;
+  --chat-primary-dark: #E54A2A;
+  --chat-secondary: #FF9E57;
+  --chat-accent: #FF7A4A;
   --chat-success: #10b981;
   --chat-warning: #f59e0b;
   --chat-error: #ef4444;
   
   /* Message colors */
-  --message-sent: #6366f1;
-  --message-received: #f3f4f6;
+  --message-sent: #FF5E3A;
+  --message-received: #2A2A2A;
   --message-sent-text: #ffffff;
-  --message-received-text: #111827;
+  --message-received-text: #ededed;
   
   /* UI colors */
-  --border: #e5e7eb;
-  --border-dark: #374151;
-  --surface: #ffffff;
-  --surface-dark: #1f2937;
-  --surface-hover: #f9fafb;
-  --surface-hover-dark: #374151;
+  --border: #3A3A3A;
+  --border-dark: #2A2A2A;
+  --surface: #1E1E1E;
+  --surface-dark: #151515;
+  --surface-hover: #2A2A2A;
+  --surface-hover-dark: #3A3A3A;
 }
 
 @theme inline {
@@ -52,19 +58,73 @@
   --color-surface: var(--surface);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --border: #374151;
-    --border-dark: #4b5563;
-    --surface: #1f2937;
-    --surface-dark: #111827;
-    --surface-hover: #374151;
-    --surface-hover-dark: #4b5563;
-    --message-received: #374151;
-    --message-received-text: #f3f4f6;
+/* Flame animations */
+@keyframes flameFlicker {
+  0%, 100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 10px rgba(255, 94, 58, 0.5));
   }
+  25% {
+    opacity: 0.9;
+    filter: drop-shadow(0 0 15px rgba(255, 158, 87, 0.6));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 20px rgba(255, 94, 58, 0.7));
+  }
+  75% {
+    opacity: 0.95;
+    filter: drop-shadow(0 0 15px rgba(255, 158, 87, 0.6));
+  }
+}
+
+@keyframes flameGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 94, 58, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(255, 158, 87, 0.5);
+  }
+}
+
+@keyframes flameSlide {
+  from {
+    opacity: 0;
+    transform: translateX(-20px) scale(0.95);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes flameScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-flame-flicker {
+  animation: flameFlicker 2s ease-in-out infinite;
+}
+
+.animate-flame-glow {
+  animation: flameGlow 2s ease-in-out infinite;
+}
+
+.animate-flame-slide {
+  animation: flameSlide 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-flame-scale {
+  animation: flameScale 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
@@ -79,6 +139,21 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  
+  /* PWA safe area insets */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Gradient text utility */
+.gradient-flame {
+  background: linear-gradient(135deg, #FF5E3A 0%, #FF9E57 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* Scrollbar styles */
@@ -146,4 +221,48 @@ body {
 
 .animate-slide-in {
   animation: slideIn 0.3s ease-out;
+}
+
+/* PWA specific styles */
+@media (display-mode: standalone) {
+  body {
+    /* Adjust for standalone PWA */
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  /* Hide browser UI elements in standalone mode */
+  header {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* Responsive breakpoints */
+@media (max-width: 767px) {
+  /* Mobile styles */
+  body {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Tablet styles */
+  body {
+    font-size: 15px;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* Desktop styles */
+  body {
+    font-size: 16px;
+  }
+}
+
+/* Touch optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* Touch device optimizations */
+  button, a {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }

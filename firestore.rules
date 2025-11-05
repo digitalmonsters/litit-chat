@@ -1,0 +1,108 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to get current user ID
+    function currentUserId() {
+      return request.auth.uid;
+    }
+
+    // Helper function to check if message is unlocked for current user
+    // Supports both array and map structures for unlockedBy
+    function isMessageUnlocked(messageData) {
+      // If message is not locked, allow access
+      if (!messageData.isLocked) {
+        return true;
+      }
+      // Or if user is the sender
+      if (messageData.senderId == currentUserId()) {
+        return true;
+      }
+      // Check if unlockedBy is a map (object) and contains current user
+      // Direct key access: if the key exists, the user has unlocked it
+      if (messageData.unlockedBy != null && 
+          messageData.unlockedBy[currentUserId()] != null) {
+        return true;
+      }
+      // For array-based unlockedBy, we can't directly check in rules
+      // Application layer must enforce this check
+      return false;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      // Users can read their own data
+      allow read: if isAuthenticated() && currentUserId() == userId;
+      // Users can update their own data
+      allow update: if isAuthenticated() && currentUserId() == userId;
+      // Users can create their own document
+      allow create: if isAuthenticated() && currentUserId() == userId;
+    }
+
+    // Chats collection
+    match /chats/{chatId} {
+      // Users can read chats they are part of
+      allow read: if isAuthenticated() && 
+                     currentUserId() in resource.data.participantIds;
+      
+      // Users can create chats
+      allow create: if isAuthenticated() && 
+                       currentUserId() == request.resource.data.createdBy;
+      
+      // Users can update chats they are part of
+      allow update: if isAuthenticated() && 
+                       currentUserId() in resource.data.participantIds;
+
+      // Messages subcollection
+      match /messages/{messageId} {
+        // Users can read messages if:
+        // 1. They are a participant in the chat
+        // 2. Message is not locked OR they have unlocked it OR they are the sender
+        allow read: if isAuthenticated() && 
+                       currentUserId() in get(/databases/$(database)/documents/chats/$(chatId)).data.participantIds &&
+                       isMessageUnlocked(resource.data);
+
+        // Users can create messages if they are participants
+        allow create: if isAuthenticated() && 
+                         currentUserId() in get(/databases/$(database)/documents/chats/$(chatId)).data.participantIds &&
+                         currentUserId() == request.resource.data.senderId;
+
+        // Users can update their own messages
+        allow update: if isAuthenticated() && 
+                         currentUserId() == resource.data.senderId;
+
+        // Special handling for unlockedBy field updates (only by backend/webhook)
+        // Note: This field should typically only be updated by server-side code
+        // For client-side updates, you may want to use Cloud Functions or enforce via backend API
+      }
+    }
+
+    // Payments collection
+    match /payments/{paymentId} {
+      // Users can read their own payments
+      allow read: if isAuthenticated() && 
+                     currentUserId() == resource.data.userId;
+      
+      // Users cannot create payments directly (must use API)
+      allow create: if false;
+      
+      // Users cannot update payments (only backend/webhook can)
+      allow update: if false;
+    }
+
+    // Contacts collection (for GHL sync)
+    match /contacts/{contactId} {
+      // Allow authenticated users to read contacts
+      allow read: if isAuthenticated();
+      
+      // Only backend can create/update contacts
+      allow create, update: if false;
+    }
+  }
+}
+

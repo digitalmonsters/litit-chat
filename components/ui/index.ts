@@ -18,6 +18,9 @@ export type { BadgeProps } from './Badge';
 export { default as LoadingSpinner } from './LoadingSpinner';
 export type { LoadingSpinnerProps } from './LoadingSpinner';
 
+export { default as FlameLoader } from './FlameLoader';
+export type { FlameLoaderProps } from './FlameLoader';
+
 
 
 

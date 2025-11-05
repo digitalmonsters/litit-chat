@@ -1,0 +1,39 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="flame-gradient" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF5E3A;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF9E57;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%">
+      <stop offset="0%" style="stop-color:#FF5E3A;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#FF5E3A;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="512" height="512" fill="#1E1E1E" rx="20%"/>
+  
+  <!-- Glow effect -->
+  <circle cx="256" cy="256" r="200" fill="url(#glow)" opacity="0.6"/>
+  
+  <!-- Main flame shape -->
+  <path d="M256 120 C280 120, 300 140, 300 180 C300 200, 290 220, 280 240 C270 260, 260 280, 256 300 C252 280, 242 260, 232 240 C222 220, 212 200, 212 180 C212 140, 232 120, 256 120 Z" 
+        fill="url(#flame-gradient)" 
+        stroke="#FF5E3A" 
+        stroke-width="2"/>
+  
+  <!-- Inner flame highlight -->
+  <path d="M256 140 C275 140, 290 155, 290 175 C290 190, 283 205, 276 220 C269 235, 262 250, 256 265 C250 250, 243 235, 236 220 C229 205, 222 190, 222 175 C222 155, 237 140, 256 140 Z" 
+        fill="#FF9E57" 
+        opacity="0.7"/>
+  
+  <!-- Text: Lit.it -->
+  <text x="256" y="380" 
+        font-family="Arial, sans-serif" 
+        font-size="48" 
+        font-weight="bold" 
+        fill="url(#flame-gradient)" 
+        text-anchor="middle"
+        letter-spacing="2">Lit.it</text>
+</svg>
+

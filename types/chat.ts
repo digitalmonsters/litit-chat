@@ -14,6 +14,7 @@ export interface Message {
   isEdited?: boolean;
   editedAt?: Date;
   replyTo?: string;
+  chatId?: string;
 }
 
 export interface User {
