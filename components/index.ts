@@ -15,6 +15,10 @@ export * from './layout';
 // DM2Pay Builder
 export * from './dm2pay-builder';
 
+// Realtime Provider
+export { RealtimeProvider } from './RealtimeProvider';
+export { default as RealtimeProviderDefault } from './RealtimeProvider';
+
 
 
 

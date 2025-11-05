@@ -21,6 +21,9 @@ export type { LoadingSpinnerProps } from './LoadingSpinner';
 export { default as FlameLoader } from './FlameLoader';
 export type { FlameLoaderProps } from './FlameLoader';
 
+export { default as MediaCard, MediaGrid } from './MediaCard';
+export type { MediaCardProps } from './MediaCard';
+
 
 
 
