@@ -97,13 +97,13 @@ export default function MessageBubble({
           {message.senderAvatar ? (
             <img
               src={message.senderAvatar}
-              alt={message.senderName}
+              alt={message.senderName ?? 'User'}
               className="w-8 h-8 rounded-full object-cover"
             />
           ) : (
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF5E3A] to-[#FF9E57] flex items-center justify-center">
               <span className="text-white text-xs font-semibold">
-                {message.senderName.charAt(0).toUpperCase()}
+                {message.senderName?.charAt(0)?.toUpperCase() ?? '?'}
               </span>
             </div>
           )}
@@ -120,7 +120,7 @@ export default function MessageBubble({
       >
         {!isOwn && (
           <span className="text-xs font-medium text-gray-400">
-            {message.senderName}
+            {message.senderName ?? 'Unknown'}
           </span>
         )}
 

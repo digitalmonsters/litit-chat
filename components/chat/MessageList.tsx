@@ -69,8 +69,8 @@ export default function MessageList({
                 index === messages.length - 1 ||
                 (messages[index + 1]?.timestamp?.toMillis &&
                   message.timestamp?.toMillis &&
-                  messages[index + 1].timestamp.toMillis() -
-                    message.timestamp.toMillis() >
+                  (messages[index + 1].timestamp?.toMillis() ?? 0) -
+                    (message.timestamp?.toMillis() ?? 0) >
                     300000)
               }
             />

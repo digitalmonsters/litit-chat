@@ -64,8 +64,16 @@ export default function LivePartyScreen({
       livestreamRef,
       (snapshot) => {
         if (snapshot.exists()) {
-          const data = { id: snapshot.id, ...snapshot.data() };
-          setLivestream(data);
+          const data = snapshot.data();
+          setLivestream({
+            id: snapshot.id,
+            hostId: data?.hostId ?? '',
+            battleHostId: data?.battleHostId,
+            status: data?.status ?? 'scheduled',
+            viewerCount: data?.viewerCount ?? 0,
+            isBattleMode: data?.isBattleMode ?? false,
+            ...data,
+          });
         }
       },
       (err) => {
@@ -86,11 +94,19 @@ export default function LivePartyScreen({
     const q = query(commentsRef, orderBy('timestamp', 'desc'), limit(100));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const commentsData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        timestamp: doc.data().timestamp?.toDate() || new Date(),
-      }));
+      const commentsData = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          userId: data?.userId ?? '',
+          userName: data?.userName ?? 'Anonymous',
+          userAvatar: data?.userAvatar,
+          message: data?.message ?? '',
+          timestamp: data?.timestamp?.toDate() ?? new Date(),
+          isTip: data?.isTip,
+          tipAmount: data?.tipAmount,
+        };
+      });
       setComments(commentsData.reverse()); // Reverse to show oldest first
     });
 
@@ -111,8 +127,8 @@ export default function LivePartyScreen({
       
       await addDoc(commentsRef, {
         userId: user.uid,
-        userName: user.displayName || 'Anonymous',
-        userAvatar: user.photoURL || undefined,
+        userName: user.displayName ?? 'Anonymous',
+        userAvatar: user.photoURL ?? undefined,
         message: newComment,
         timestamp: serverTimestamp(),
         createdAt: serverTimestamp(),
@@ -139,8 +155,8 @@ export default function LivePartyScreen({
       
       await addDoc(commentsRef, {
         userId: user.uid,
-        userName: user.displayName || 'Anonymous',
-        userAvatar: user.photoURL || undefined,
+        userName: user.displayName ?? 'Anonymous',
+        userAvatar: user.photoURL ?? undefined,
         message: `💫 Tipped $${(amount / 100).toFixed(2)}!`,
         isTip: true,
         tipAmount: amount,
@@ -230,7 +246,7 @@ export default function LivePartyScreen({
                 ) : (
                   <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#FF5E3A] to-[#FF9E57] flex items-center justify-center">
                     <span className="text-xs text-white font-semibold">
-                      {comment.userName.charAt(0).toUpperCase()}
+                      {comment.userName?.charAt(0)?.toUpperCase() ?? '?'}
                     </span>
                   </div>
                 )}
@@ -291,7 +307,7 @@ export default function LivePartyScreen({
         )}
         {livestream?.isBattleMode && livestream?.battleHostId && (
           <motion.button
-            onClick={() => handleTip(livestream.battleHostId)}
+            onClick={() => handleTip(livestream.battleHostId ?? '')}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="px-4 py-2 bg-gradient-to-r from-[#FF5E3A] to-[#FF9E57] rounded-lg text-white font-semibold flex items-center gap-2"
@@ -311,7 +327,7 @@ export default function LivePartyScreen({
             setSelectedUserId(null);
           }}
           recipientId={selectedUserId}
-          onSuccess={(amount) => handleTipSuccess(amount, selectedUserId)}
+          onSuccess={(amount) => handleTipSuccess(amount, selectedUserId ?? '')}
         />
       )}
     </div>

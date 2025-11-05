@@ -162,14 +162,10 @@ interface ChatListItemProps {
 
 function ChatListItem({ chat, isSelected, onClick }: ChatListItemProps) {
   const { user } = useAuth();
-  const otherParticipant = chat.participantIds.find((id) => id !== user?.uid);
-  const participantName = otherParticipant
-    ? chat.participantDetails?.[otherParticipant]?.displayName || 'Unknown'
-    : chat.name;
+  const otherParticipant = chat.participantIds?.find((id) => id !== user?.uid);
+  const participantName = chat.name ?? 'Unknown';
 
-  const participantAvatar = otherParticipant
-    ? chat.participantDetails?.[otherParticipant]?.photoURL
-    : chat.avatar;
+  const participantAvatar = chat.avatar;
 
   const formatTime = (timestamp?: Timestamp) => {
     if (!timestamp) return '';
@@ -187,11 +183,13 @@ function ChatListItem({ chat, isSelected, onClick }: ChatListItemProps) {
   const lastMessageText = chat.lastMessage
     ? chat.lastMessage.type === 'image'
       ? '📷 Photo'
+      : chat.lastMessage.type === 'video'
+      ? '🎥 Video'
+      : chat.lastMessage.type === 'audio'
+      ? '🎵 Audio'
       : chat.lastMessage.type === 'file'
       ? '📎 File'
-      : chat.lastMessage.type === 'payment'
-      ? '💰 Payment'
-      : chat.lastMessage.content
+      : chat.lastMessage.content ?? ''
     : 'No messages yet';
 
   return (
@@ -216,7 +214,7 @@ function ChatListItem({ chat, isSelected, onClick }: ChatListItemProps) {
         ) : (
           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#FF5E3A] to-[#FF9E57] flex items-center justify-center">
             <span className="text-white font-semibold">
-              {participantName.charAt(0).toUpperCase()}
+              {participantName?.charAt(0)?.toUpperCase() ?? '?'}
             </span>
           </div>
         )}
