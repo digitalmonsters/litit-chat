@@ -1,74 +1,76 @@
-# ==============================
-# 🚀 Lit.it Netlify Deploy Config
-# ==============================
+# ============================================
+# 🚀 Lit.it Netlify Deployment Configuration
+# ============================================
 
-# ------------------------------
-# Global build settings
-# ------------------------------
 [build]
   command   = "npm run build"
   publish   = ".next"
-  # Needed for Next.js on Netlify
   functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "20"
-  NPM_FLAGS    = "--legacy-peer-deps"
+  NPM_FLAGS = "--legacy-peer-deps"
   NEXT_TELEMETRY_DISABLED = "1"
 
-# ------------------------------
-# Default context = main (Production)
-# ------------------------------
+# --------------------------------------------
+# Production context (main branch)
+# --------------------------------------------
 [context.production]
   branch = "main"
-  environment = { 
-    NEXT_PUBLIC_APP_ENV = "production",
+
+  [context.production.environment]
+    NEXT_PUBLIC_APP_ENV = "production"
     NEXT_PUBLIC_SITE_URL = "https://lit.dm2pay.com"
-  }
+
   [context.production.deploy]
     command = "npm run build"
-  [context.production.plugins]
+
+  [[context.production.plugins]]
     package = "@netlify/plugin-nextjs"
 
-# ------------------------------
-# Staging environment
-# ------------------------------
+# --------------------------------------------
+# Staging context (staging branch)
+# --------------------------------------------
 [context.staging]
   branch = "staging"
-  environment = { 
-    NEXT_PUBLIC_APP_ENV = "staging",
+
+  [context.staging.environment]
+    NEXT_PUBLIC_APP_ENV = "staging"
     NEXT_PUBLIC_SITE_URL = "https://staging-lit.dm2pay.netlify.app"
-  }
+
   [context.staging.deploy]
     command = "npm run build"
-  [context.staging.plugins]
+
+  [[context.staging.plugins]]
     package = "@netlify/plugin-nextjs"
 
-# ------------------------------
-# Develop environment
-# ------------------------------
+# --------------------------------------------
+# Development context (develop branch)
+# --------------------------------------------
 [context.develop]
   branch = "develop"
-  environment = { 
-    NEXT_PUBLIC_APP_ENV = "develop",
+
+  [context.develop.environment]
+    NEXT_PUBLIC_APP_ENV = "develop"
     NEXT_PUBLIC_SITE_URL = "https://develop-lit.dm2pay.netlify.app"
-  }
+
   [context.develop.deploy]
     command = "npm run build"
-  [context.develop.plugins]
+
+  [[context.develop.plugins]]
     package = "@netlify/plugin-nextjs"
 
-# ------------------------------
-# Redirects & rewrites for SPA / Next.js
-# ------------------------------
+# --------------------------------------------
+# Redirects (SPA fallback)
+# --------------------------------------------
 [[redirects]]
   from = "/*"
-  to   = "/index.html"
+  to = "/index.html"
   status = 200
 
-# ------------------------------
-# Custom headers (security & PWA)
-# ------------------------------
+# --------------------------------------------
+# Security Headers (for PWA + SEO)
+# --------------------------------------------
 [[headers]]
   for = "/*"
   [headers.values]
