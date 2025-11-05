@@ -137,6 +137,62 @@ export async function POST(request: NextRequest) {
       { merge: true }
     );
 
+    // Check if other participant is an AI companion - if so, generate AI reply
+    const otherParticipantId = chatData.participantIds.find(id => id !== senderId);
+    if (otherParticipantId) {
+      const otherUserRef = doc(firestore, COLLECTIONS.USERS, otherParticipantId);
+      const otherUserSnap = await getDoc(otherUserRef);
+      
+      if (otherUserSnap.exists()) {
+        const otherUser = otherUserSnap.data();
+        
+        // If partner is AI, generate and send AI reply (non-blocking)
+        if (otherUser.isAI === true && otherUser.aiPersonality) {
+          import('@/lib/ai-companion')
+            .then(async ({ generateAIReply, getConversationHistory }) => {
+              try {
+                const conversationHistory = await getConversationHistory(firestore, chatId, 10);
+                const aiReply = await generateAIReply(
+                  otherUser.aiPersonality,
+                  content,
+                  conversationHistory,
+                  senderName
+                );
+                
+                const aiMessageRef = doc(collection(firestore, COLLECTIONS.MESSAGES));
+                await setDoc(aiMessageRef, {
+                  id: aiMessageRef.id,
+                  chatId,
+                  senderId: otherParticipantId,
+                  senderName: otherUser.displayName || 'AI Companion',
+                  senderAvatar: otherUser.photoURL,
+                  content: aiReply,
+                  type: 'text',
+                  status: 'sent',
+                  timestamp: Timestamp.now(),
+                  createdAt: serverTimestamp() as Timestamp,
+                });
+                
+                await setDoc(chatRef, {
+                  lastMessageId: aiMessageRef.id,
+                  lastMessageAt: serverTimestamp() as Timestamp,
+                  updatedAt: serverTimestamp() as Timestamp,
+                  unreadCounts: {
+                    ...chatData.unreadCounts,
+                    [senderId]: (chatData.unreadCounts[senderId] || 0) + 1,
+                  },
+                }, { merge: true });
+                
+                console.log('✅ AI reply sent');
+              } catch (err) {
+                console.error('Error generating AI reply:', err);
+              }
+            })
+            .catch((err) => console.error('Error loading AI companion:', err));
+        }
+      }
+    }
+
     return NextResponse.json(
       {
         success: true,
