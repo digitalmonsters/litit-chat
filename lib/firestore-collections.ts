@@ -77,6 +77,35 @@ export interface FirestoreCall {
 }
 
 // ============================================================================
+// PAYMENTS COLLECTION
+// ============================================================================
+
+export interface FirestorePayment {
+  id: string; // Document ID
+  userId: string; // User who made the payment
+  callId?: string; // Associated call ID (for call payments)
+  invoiceId?: string; // Invoice ID (alternative to callId)
+  amount: number; // Amount in cents or dollars
+  currency?: string; // Currency (USD, STARS, etc.)
+  status: 'pending' | 'paid' | 'failed' | 'refunded';
+  method?: string; // Payment method (ghl, stripe, wallet, etc.)
+  paymentMethod?: string; // Alias for method
+
+  // GHL integration fields
+  ghlTransactionId?: string; // GHL transaction/invoice ID
+  ghlContactId?: string; // GHL contact ID
+  ghlLocationId?: string; // GHL location ID
+
+  // Description and metadata
+  description?: string;
+  metadata?: Record<string, unknown>;
+
+  // Timestamps
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+// ============================================================================
 // BATTLES COLLECTION
 // ============================================================================
 
