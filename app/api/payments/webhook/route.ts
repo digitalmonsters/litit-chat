@@ -632,7 +632,7 @@ async function handleInvoiceFailed(invoice: {
         const userDoc = userSnap.docs[0];
         userId = userDoc.id;
         const userData = userDoc.data() as FirestoreUser;
-        userEmail = userData.email;
+        userEmail = userData.email ?? null;
       }
     }
 
@@ -643,7 +643,7 @@ async function handleInvoiceFailed(invoice: {
 
       if (userSnap.exists()) {
         const userData = userSnap.data() as FirestoreUser;
-        userEmail = userData.email;
+        userEmail = userData.email ?? null;
 
         // Generate reactivation link
         const reactivationToken = generateReactivationToken(userId);
