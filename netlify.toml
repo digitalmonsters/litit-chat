@@ -1,0 +1,80 @@
+# ==============================
+# 🚀 Lit.it Netlify Deploy Config
+# ==============================
+
+# ------------------------------
+# Global build settings
+# ------------------------------
+[build]
+  command   = "npm run build"
+  publish   = ".next"
+  # Needed for Next.js on Netlify
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_FLAGS    = "--legacy-peer-deps"
+  NEXT_TELEMETRY_DISABLED = "1"
+
+# ------------------------------
+# Default context = main (Production)
+# ------------------------------
+[context.production]
+  branch = "main"
+  environment = { 
+    NEXT_PUBLIC_APP_ENV = "production",
+    NEXT_PUBLIC_SITE_URL = "https://lit.dm2pay.com"
+  }
+  [context.production.deploy]
+    command = "npm run build"
+  [context.production.plugins]
+    package = "@netlify/plugin-nextjs"
+
+# ------------------------------
+# Staging environment
+# ------------------------------
+[context.staging]
+  branch = "staging"
+  environment = { 
+    NEXT_PUBLIC_APP_ENV = "staging",
+    NEXT_PUBLIC_SITE_URL = "https://staging-lit.dm2pay.netlify.app"
+  }
+  [context.staging.deploy]
+    command = "npm run build"
+  [context.staging.plugins]
+    package = "@netlify/plugin-nextjs"
+
+# ------------------------------
+# Develop environment
+# ------------------------------
+[context.develop]
+  branch = "develop"
+  environment = { 
+    NEXT_PUBLIC_APP_ENV = "develop",
+    NEXT_PUBLIC_SITE_URL = "https://develop-lit.dm2pay.netlify.app"
+  }
+  [context.develop.deploy]
+    command = "npm run build"
+  [context.develop.plugins]
+    package = "@netlify/plugin-nextjs"
+
+# ------------------------------
+# Redirects & rewrites for SPA / Next.js
+# ------------------------------
+[[redirects]]
+  from = "/*"
+  to   = "/index.html"
+  status = 200
+
+# ------------------------------
+# Custom headers (security & PWA)
+# ------------------------------
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(self)"
