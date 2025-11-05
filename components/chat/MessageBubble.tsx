@@ -8,11 +8,13 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import type { FirestoreMessage } from '@/lib/firestore-collections';
 import LockedMessage from './LockedMessage';
 import { flameFadeIn } from '@/lib/flame-transitions';
 import { useAuth } from '@/contexts/AuthContext';
+import { getOptimizedImageSrc } from '@/lib/image-utils';
 
 export interface MessageBubbleProps {
   message: FirestoreMessage;
@@ -95,10 +97,14 @@ export default function MessageBubble({
       {showAvatar && !isOwn && (
         <div className="flex-shrink-0">
           {message.senderAvatar ? (
-            <img
-              src={message.senderAvatar}
+            <Image
+              src={getOptimizedImageSrc(message.senderAvatar, { width: 32, height: 32, quality: 85 })}
               alt={message.senderName ?? 'User'}
+              width={32}
+              height={32}
               className="w-8 h-8 rounded-full object-cover"
+              loading="lazy"
+              unoptimized={!message.senderAvatar.includes('bunnycdn.com') && !message.senderAvatar.includes('bunny.net')}
             />
           ) : (
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF5E3A] to-[#FF9E57] flex items-center justify-center">
@@ -144,12 +150,17 @@ export default function MessageBubble({
               {message.attachments
                 .filter((att) => att.type.startsWith('image/'))
                 .map((att, idx) => (
-                  <img
-                    key={idx}
-                    src={att.url}
-                    alt={att.name}
-                    className="max-w-full rounded-lg"
-                  />
+                  <div key={idx} className="relative w-full max-w-full rounded-lg overflow-hidden">
+                    <Image
+                      src={getOptimizedImageSrc(att.url, { width: 800, height: 600, quality: 85 })}
+                      alt={att.name}
+                      width={800}
+                      height={600}
+                      className="max-w-full h-auto rounded-lg"
+                      loading="lazy"
+                      unoptimized={!att.url.includes('bunnycdn.com') && !att.url.includes('bunny.net')}
+                    />
+                  </div>
                 ))}
             </div>
           )}

@@ -8,8 +8,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import type { FirestoreUser } from '@/lib/firestore-collections';
+import { getOptimizedImageSrc } from '@/lib/image-utils';
 
 export interface UserCardProps {
   user: FirestoreUser;
@@ -93,10 +95,14 @@ export default function UserCard({ user, onClick, className }: UserCardProps) {
       {/* Avatar */}
       <div className="relative aspect-square">
         {user.photoURL ? (
-          <img
-            src={user.photoURL}
+          <Image
+            src={getOptimizedImageSrc(user.photoURL, { width: 400, height: 400, quality: 85 })}
             alt={user.displayName}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
+            loading="lazy"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            unoptimized={!user.photoURL.includes('bunnycdn.com') && !user.photoURL.includes('bunny.net')}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-[#FF5E3A] to-[#FF9E57] flex items-center justify-center">

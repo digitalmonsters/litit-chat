@@ -22,6 +22,8 @@ import {
 import { getFirestoreInstance } from '@/lib/firebase';
 import { COLLECTIONS } from '@/lib/firebase';
 import { flameFadeIn } from '@/lib/flame-transitions';
+import { sendTypingIndicator } from '@/lib/socket';
+import type { Socket } from 'socket.io-client';
 
 // Snap Camera Kit integration (optional)
 // Note: Install @snap/camera-kit package for full camera integration
@@ -32,6 +34,7 @@ export interface MessageInputProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  socket?: Socket | null;
 }
 
 export default function MessageInput({
@@ -39,6 +42,7 @@ export default function MessageInput({
   placeholder = 'Type a message...',
   disabled = false,
   className,
+  socket,
 }: MessageInputProps) {
   const { user } = useAuth();
   const [message, setMessage] = useState('');
@@ -49,6 +53,7 @@ export default function MessageInput({
   const [uploading, setUploading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleSend = async () => {
     if ((!message.trim() && !selectedFile) || disabled || !user) return;
@@ -192,6 +197,22 @@ export default function MessageInput({
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+
+    // Send typing indicator
+    if (socket && user && e.target.value.trim().length > 0) {
+      sendTypingIndicator(socket, chatId, user.displayName || 'User');
+
+      // Clear existing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      // The server will handle clearing typing state after 3 seconds
+      // But we can also send a stop signal if user stops typing
+      typingTimeoutRef.current = setTimeout(() => {
+        // Typing indicator will auto-clear on server after 3s
+      }, 3000);
     }
   };
 
