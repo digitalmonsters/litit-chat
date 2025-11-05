@@ -1,8 +1,11 @@
 'use client';
 
 import React from 'react';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { userJoinSpring, userLeaveSpring } from '@/lib/flame-transitions';
+import { getOptimizedImageSrc } from '@/lib/image-utils';
 
 export interface AvatarProps {
   src?: string;
@@ -54,10 +57,11 @@ export default function Avatar({
   const avatarContent = src ? (
     <div className="relative h-full w-full">
       <Image
-        src={src}
+        src={getOptimizedImageSrc(src, { width: 128, height: 128 })}
         alt={alt || name || 'Avatar'}
         fill
         className="rounded-full object-cover"
+        unoptimized={src.includes('bunnycdn.com') || src.includes('bunny.net')}
       />
     </div>
   ) : (
@@ -67,25 +71,34 @@ export default function Avatar({
   );
 
   return (
-    <div className={cn('relative inline-block', className)}>
+    <motion.div
+      className={cn('relative inline-block', className)}
+      variants={userJoinSpring}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+    >
       <div
         className={cn(
-          'relative flex items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-indigo-500 to-purple-600',
+          'relative flex items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#FF5E3A] to-[#FF9E57]',
           sizes[size]
         )}
       >
         {avatarContent}
       </div>
       {status && (
-        <span
+        <motion.span
           className={cn(
-            'absolute bottom-0 right-0 rounded-full border-2 border-white dark:border-zinc-900',
+            'absolute bottom-0 right-0 rounded-full border-2 border-[#1E1E1E]',
             statusSizes[size],
             statusColors[status]
           )}
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
         />
       )}
-    </div>
+    </motion.div>
   );
 }
 

@@ -223,3 +223,159 @@ export const pageTransition = {
   transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] },
 };
 
+/**
+ * Spring animation for message send (own messages)
+ */
+export const messageSendSpring: Variants = {
+  initial: {
+    opacity: 0,
+    scale: 0.8,
+    x: 20,
+    filter: 'blur(4px)',
+  },
+  animate: {
+    opacity: 1,
+    scale: 1,
+    x: 0,
+    filter: 'blur(0px)',
+    transition: {
+      type: 'spring',
+      stiffness: 500,
+      damping: 30,
+      mass: 0.5,
+    },
+  },
+};
+
+/**
+ * Spring animation for message receive (other users' messages)
+ */
+export const messageReceiveSpring: Variants = {
+  initial: {
+    opacity: 0,
+    scale: 0.8,
+    x: -20,
+    filter: 'blur(4px)',
+  },
+  animate: {
+    opacity: 1,
+    scale: 1,
+    x: 0,
+    filter: 'blur(0px)',
+    transition: {
+      type: 'spring',
+      stiffness: 500,
+      damping: 30,
+      mass: 0.5,
+    },
+  },
+};
+
+/**
+ * Spring animation for user join
+ */
+export const userJoinSpring: Variants = {
+  initial: {
+    opacity: 0,
+    scale: 0,
+    y: -20,
+  },
+  animate: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: {
+      type: 'spring',
+      stiffness: 400,
+      damping: 25,
+      mass: 0.6,
+    },
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.8,
+    y: 20,
+    transition: {
+      type: 'spring',
+      stiffness: 500,
+      damping: 30,
+    },
+  },
+};
+
+/**
+ * Spring animation for user leave
+ */
+export const userLeaveSpring: Variants = {
+  initial: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.8,
+    y: -20,
+    transition: {
+      type: 'spring',
+      stiffness: 500,
+      damping: 30,
+    },
+  },
+};
+
+/**
+ * Spring animation for modal open/close
+ */
+export const modalSpring: Variants = {
+  initial: {
+    opacity: 0,
+    scale: 0.9,
+    y: 20,
+  },
+  animate: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: {
+      type: 'spring',
+      stiffness: 400,
+      damping: 30,
+      mass: 0.8,
+    },
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.9,
+    y: 20,
+    transition: {
+      type: 'spring',
+      stiffness: 500,
+      damping: 35,
+    },
+  },
+};
+
+/**
+ * Backdrop spring animation
+ */
+export const backdropSpring: Variants = {
+  initial: {
+    opacity: 0,
+  },
+  animate: {
+    opacity: 1,
+    transition: {
+      type: 'spring',
+      stiffness: 300,
+      damping: 30,
+    },
+  },
+  exit: {
+    opacity: 0,
+    transition: {
+      duration: 0.2,
+    },
+  },
+};
+
