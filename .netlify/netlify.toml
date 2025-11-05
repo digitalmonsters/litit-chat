@@ -1,38 +1,27 @@
 headersOrigin = "inline"
 redirectsOrigin = "inline"
-branch = "main"
-functionsDirectory = "/Users/mc/Desktop/profiles/firechat/litit-chat/netlify/functions"
-functionsDirectoryOrigin = "config-v1"
-
-[deploy]
-command = "npm run build"
 
 [images]
-remote_images = ["^(?:http(?:s)?:\\/\\/firebasestorage\\.googleapis\\.com(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)|$))$"]
+remote_images = ["^(?:https:\\/\\/firebasestorage\\.googleapis\\.com(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)|$))$"]
 
 [functions]
 
 [functions."*"]
 
 [[plugins]]
-origin = "config"
+origin = "default"
 package = "@netlify/plugin-nextjs"
+pinned_version = "5"
 
 [plugins.inputs]
 
 [build]
 publish = "/Users/mc/Desktop/profiles/firechat/litit-chat/.next"
-publishOrigin = "config"
-commandOrigin = "config"
+publishOrigin = "ui"
+commandOrigin = "ui"
 command = "npm run build"
-functions = "/Users/mc/Desktop/profiles/firechat/litit-chat/netlify/functions"
 
 [build.environment]
-NODE_VERSION = "20"
-NPM_FLAGS = "--legacy-peer-deps"
-NEXT_TELEMETRY_DISABLED = "1"
-NEXT_PUBLIC_APP_ENV = "production"
-NEXT_PUBLIC_SITE_URL = "https://lit.dm2pay.com"
 
 [build.processing]
 
@@ -47,33 +36,10 @@ NEXT_PUBLIC_SITE_URL = "https://lit.dm2pay.com"
 [build.services]
 
 [[headers]]
-for = "/*"
-
-[headers.values]
-Referrer-Policy = "strict-origin-when-cross-origin"
-X-Frame-Options = "DENY"
-X-Content-Type-Options = "nosniff"
-X-XSS-Protection = "1; mode=block"
-Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
-Permissions-Policy = "camera=(), microphone=(), geolocation=(self)"
-
-[[headers]]
 for = "/_next/static/*"
 
 [headers.values]
 Cache-Control = "public, max-age=31536000, immutable"
-
-[[redirects]]
-from = "/*"
-to = "/index.html"
-status = 200.0
-force = false
-
-[redirects.query]
-
-[redirects.conditions]
-
-[redirects.headers]
 
 [[redirects]]
 from = "/_next/image"

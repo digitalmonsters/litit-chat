@@ -1,193 +1,52 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper function to check if user is authenticated
-    function isAuthenticated() {
+
+    // --- Helper functions ---
+    function isSignedIn() {
       return request.auth != null;
     }
 
-    // Helper function to get current user ID
-    function currentUserId() {
-      return request.auth.uid;
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
     }
 
-    // Helper function to check if message is unlocked for current user
-    // Supports both array and map structures for unlockedBy
-    function isMessageUnlocked(messageData) {
-      // If message is not locked, allow access
-      if (!messageData.isLocked) {
-        return true;
-      }
-      // Or if user is the sender
-      if (messageData.senderId == currentUserId()) {
-        return true;
-      }
-      // Check if unlockedBy is a map (object) and contains current user
-      // Direct key access: if the key exists, the user has unlocked it
-      if (messageData.unlockedBy != null && 
-          messageData.unlockedBy[currentUserId()] != null) {
-        return true;
-      }
-      // For array-based unlockedBy, we can't directly check in rules
-      // Application layer must enforce this check
-      return false;
-    }
-
-    // Users collection
+    // --- USERS ---
     match /users/{userId} {
-      // Users can read their own data
-      allow read: if isAuthenticated() && currentUserId() == userId;
-      // Users can update their own data
-      allow update: if isAuthenticated() && currentUserId() == userId;
-      // Users can create their own document
-      allow create: if isAuthenticated() && currentUserId() == userId;
+      allow read, update, delete: if isOwner(userId);
+      allow create: if isSignedIn();
     }
 
-    // Chats collection
+    // --- CHATS ---
     match /chats/{chatId} {
-      // Users can read chats they are part of
-      allow read: if isAuthenticated() && 
-                     currentUserId() in resource.data.participantIds;
-      
-      // Users can create chats
-      allow create: if isAuthenticated() && 
-                       currentUserId() == request.resource.data.createdBy;
-      
-      // Users can update chats they are part of
-      allow update: if isAuthenticated() && 
-                       currentUserId() in resource.data.participantIds;
+      allow read, update, delete: if isSignedIn() &&
+        request.auth.uid in resource.data.participantIds;
+      allow create: if isSignedIn();
 
-      // Messages subcollection
       match /messages/{messageId} {
-        // Users can read messages if:
-        // 1. They are a participant in the chat
-        // 2. Message is not locked OR they have unlocked it OR they are the sender
-        allow read: if isAuthenticated() && 
-                       currentUserId() in get(/databases/$(database)/documents/chats/$(chatId)).data.participantIds &&
-                       isMessageUnlocked(resource.data);
-
-        // Users can create messages if they are participants
-        allow create: if isAuthenticated() && 
-                         currentUserId() in get(/databases/$(database)/documents/chats/$(chatId)).data.participantIds &&
-                         currentUserId() == request.resource.data.senderId;
-
-        // Users can update their own messages
-        allow update: if isAuthenticated() && 
-                         currentUserId() == resource.data.senderId;
-
-        // Special handling for unlockedBy field updates (only by backend/webhook)
-        // Note: This field should typically only be updated by server-side code
-        // For client-side updates, you may want to use Cloud Functions or enforce via backend API
+        allow read, create: if isSignedIn() &&
+          request.auth.uid in
+          get(/databases/$(database)/documents/chats/$(chatId)).data.participantIds;
       }
     }
 
-    // Payments collection
+    // --- PAYMENTS ---
     match /payments/{paymentId} {
-      // Users can read their own payments
-      allow read: if isAuthenticated() && 
-                     currentUserId() == resource.data.userId;
-      
-      // Users cannot create payments directly (must use API)
-      allow create: if false;
-      
-      // Users cannot update payments (only backend/webhook can)
-      allow update: if false;
+      allow read: if isSignedIn() &&
+        request.auth.uid == resource.data.userId;
+      allow create: if isSignedIn();
     }
 
-    // Contacts collection (for GHL sync)
-    match /contacts/{contactId} {
-      // Allow authenticated users to read contacts
-      allow read: if isAuthenticated();
-      
-      // Only backend can create/update contacts
-      allow create, update: if false;
-    }
-
-    // Wallets collection
+    // --- WALLETS ---
     match /wallets/{walletId} {
-      // Users can read their own wallet
-      allow read: if isAuthenticated() && currentUserId() == walletId;
-      
-      // Users cannot create/update wallets directly (must use API)
-      allow create, update: if false;
+      allow read: if isOwner(walletId);
+      allow update: if isOwner(walletId);
+      allow create: if isSignedIn();
     }
 
-    // Calls collection
-    match /calls/{callId} {
-      // Users can read calls they are participants in
-      allow read: if isAuthenticated() && 
-                     (currentUserId() == resource.data.hostId ||
-                      currentUserId() in resource.data.participantIds);
-      
-      // Users can create calls (via API)
-      allow create: if isAuthenticated() && 
-                       currentUserId() == request.resource.data.hostId;
-      
-      // Users can update their own calls (host only)
-      allow update: if isAuthenticated() && 
-                       currentUserId() == resource.data.hostId;
-    }
-
-    // Livestreams collection
-    match /livestreams/{livestreamId} {
-      // Users can read all livestreams (for discovery)
-      allow read: if isAuthenticated();
-      
-      // Hosts can create livestreams
-      allow create: if isAuthenticated() && 
-                       currentUserId() == request.resource.data.hostId;
-      
-      // Hosts can read/write their own livestreams
-      allow read, update: if isAuthenticated() && 
-                             currentUserId() == resource.data.hostId;
-      
-      // Viewers can update their viewer data (join/leave)
-      allow update: if isAuthenticated() && 
-                       (currentUserId() == resource.data.hostId ||
-                        currentUserId() in resource.data.viewers);
-    }
-
-    // Transactions collection
-    match /transactions/{transactionId} {
-      // Users can read their own transactions
-      allow read: if isAuthenticated() && 
-                     currentUserId() == resource.data.userId;
-      
-      // Users cannot create/update transactions directly (must use API)
-      allow create, update: if false;
-    }
-
-    // Tips collection
-    match /tips/{tipId} {
-      // Users can read tips they sent or received
-      allow read: if isAuthenticated() && 
-                     (currentUserId() == resource.data.tipperId ||
-                      currentUserId() == resource.data.hostId);
-      
-      // Users can create tips they send
-      allow create: if isAuthenticated() && 
-                       currentUserId() == request.resource.data.tipperId;
-      
-      // Users cannot update tips (only backend can)
-      allow update: if false;
-    }
-
-    // Battles collection
-    match /battles/{battleId} {
-      // Users can read battles they participate in
-      allow read: if isAuthenticated() && 
-                     (currentUserId() == resource.data.hostId ||
-                      currentUserId() in resource.data.participantIds);
-      
-      // Hosts can create battles
-      allow create: if isAuthenticated() && 
-                       currentUserId() == request.resource.data.hostId;
-      
-      // Hosts can update their own battles
-      allow update: if isAuthenticated() && 
-                       currentUserId() == resource.data.hostId;
+    // --- Default deny everything else ---
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
-
