@@ -85,11 +85,6 @@ export function setupSocketHandlers(io: Server) {
       // Join chat room
       socket.join(`chat:${chatId}`);
       console.log(`👤 User ${userId} joined chat ${chatId}`);
-      
-      // Update lastSeen for user in this chat
-      await updateUserLastSeenInChat(userId, chatId).catch((err) =>
-        console.error(`Error updating lastSeen:`, err)
-      );
 
       // Emit current typing states for this chat
       const chatTypingStates = typingStates.get(chatId);
@@ -140,14 +135,9 @@ export function setupSocketHandlers(io: Server) {
         users: [{ userId, userName: userName || 'User' }],
       });
 
-      // Sync to Firestore (for presence tracking)
+      // Sync to Firestore (optional - for persistence across restarts)
       await syncTypingStateToFirestore(chatId, userId, userName).catch((err) =>
         console.error(`Error syncing typing state:`, err)
-      );
-      
-      // Update user presence with typing status
-      await updateUserTypingStatus(userId, chatId, true).catch((err) =>
-        console.error(`Error updating typing status:`, err)
       );
 
       // Clear typing state after 3 seconds of inactivity
@@ -161,16 +151,6 @@ export function setupSocketHandlers(io: Server) {
               chatId,
               userId,
             });
-            
-            // Clear typing status in Firestore
-            updateUserTypingStatus(userId, chatId, false).catch((err) =>
-              console.error(`Error clearing typing status:`, err)
-            );
-            
-            // Clear from Firestore chat document
-            clearTypingStateFromFirestore(chatId, userId).catch((err) =>
-              console.error(`Error clearing typing state from Firestore:`, err)
-            );
           }
         }
       }, 3000);
@@ -279,34 +259,18 @@ export function setupSocketHandlers(io: Server) {
               chatId,
               userId: connection.userId,
             });
-            
-            // Clear from Firestore
-            await clearTypingStateFromFirestore(chatId, connection.userId).catch((err) =>
-              console.error(`Error clearing typing state from Firestore:`, err)
-            );
           }
         }
-        
-        // Clear typing status in user presence
-        await updateUserTypingStatus(connection.userId, '', false).catch((err) =>
-          console.error(`Error clearing typing status:`, err)
-        );
       }
     });
 
     // ============================================
     // LEAVE CHAT
     // ============================================
-    socket.on('leaveChat', async (data: { chatId: string }) => {
+    socket.on('leaveChat', (data: { chatId: string }) => {
       const { chatId } = data;
       if (chatId) {
         socket.leave(`chat:${chatId}`);
-        console.log(`👤 User ${userId} left chat ${chatId}`);
-        
-        // Update lastSeen
-        await updateUserLastSeenInChat(userId, chatId).catch((err) =>
-          console.error(`Error updating lastSeen on leave:`, err)
-        );
         
         // Remove typing state
         const chatTypingStates = typingStates.get(chatId);
@@ -316,19 +280,7 @@ export function setupSocketHandlers(io: Server) {
             chatId,
             userId,
           });
-          
-          // Clear typing status in Firestore
-          await updateUserTypingStatus(userId, chatId, false).catch((err) =>
-            console.error(`Error clearing typing status:`, err)
-          );
-          
-          // Clear from Firestore chat document
-          await clearTypingStateFromFirestore(chatId, userId).catch((err) =>
-            console.error(`Error clearing typing state from Firestore:`, err)
-          );
         }
-        
-        socket.emit('leftChat', { chatId });
       }
     });
   });
@@ -341,21 +293,14 @@ async function updateUserPresence(userId: string, status: 'online' | 'offline' |
   const firestore = getFirestore();
   const userRef = firestore.collection(COLLECTIONS.USERS).doc(userId);
   
-  // Update both top-level status and nested presence object for consistency
   await userRef.set(
     {
       status,
       lastSeen: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      presence: {
-        status,
-        lastSeen: admin.firestore.FieldValue.serverTimestamp(),
-      },
     },
     { merge: true }
   );
-  
-  console.log(`✅ Updated presence for ${userId}: ${status}`);
 }
 
 /**
@@ -403,25 +348,5 @@ async function updateChatUnreadCounts(chatId: string, userId: string): Promise<v
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
   }
-}
-
-/**
- * Update user typing status in presence
- */
-async function updateUserTypingStatus(userId: string, chatId: string, isTyping: boolean): Promise<void> {
-  const firestore = getFirestore();
-  const userRef = firestore.collection(COLLECTIONS.USERS).doc(userId);
-  
-  await userRef.set(
-    {
-      presence: {
-        isTyping,
-        currentChat: isTyping ? chatId : '',
-        lastSeen: admin.firestore.FieldValue.serverTimestamp(),
-      },
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    },
-    { merge: true }
-  );
 }
 

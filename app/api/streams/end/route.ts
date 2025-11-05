@@ -1,24 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestoreInstance, COLLECTIONS } from '@/lib/firebase';
-import { 
-  doc, 
-  getDoc, 
-  updateDoc, 
-  serverTimestamp, 
-  query, 
-  where, 
-  getDocs, 
-  collection 
-} from 'firebase/firestore';
+import { doc, getDoc, updateDoc, serverTimestamp, query, where, getDocs, collection } from 'firebase/firestore';
 import type { FirestoreBattle } from '@/lib/firestore-collections';
 import { createTransaction, completeTransaction } from '@/lib/transactions';
 import { addStars } from '@/lib/wallet';
 
 /**
  * POST /api/streams/end
- * Handles stream_end webhook from GHL or streaming service.
- * Marks battle winner and triggers reward workflow.
- *
+ * 
+ * Handle stream_end webhook from GHL or streaming service
+ * Marks battle winner and triggers reward workflow
+ * 
  * Body:
  * {
  *   streamId: string; // Battle ID or LiveParty ID
@@ -42,15 +34,20 @@ export async function POST(request: NextRequest) {
     const firestore = getFirestoreInstance();
 
     if (type === 'battle') {
+      // Handle battle end
       const battleRef = doc(firestore, COLLECTIONS.BATTLES, streamId);
       const battleSnap = await getDoc(battleRef);
 
       if (!battleSnap.exists()) {
-        return NextResponse.json({ error: 'Battle not found' }, { status: 404 });
+        return NextResponse.json(
+          { error: 'Battle not found' },
+          { status: 404 }
+        );
       }
 
       const battleData = battleSnap.data() as FirestoreBattle;
 
+      // Check if already ended
       if (battleData.status === 'ended') {
         return NextResponse.json(
           { error: 'Battle already ended' },
@@ -58,7 +55,8 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Retrieve tip transactions
+      // Determine winner based on total tips received
+      // Track total stars tipped to each host from transaction records
       const transactionsRef = collection(firestore, COLLECTIONS.TRANSACTIONS);
       const battleTipsQuery = query(
         transactionsRef,
@@ -71,48 +69,48 @@ export async function POST(request: NextRequest) {
       let host1TotalTips = 0;
       let host2TotalTips = 0;
 
-      battleTipsSnap.forEach((docSnap) => {
-        const tipData = docSnap.data();
-        const amount = tipData.amount || 0;
-
+      battleTipsSnap.forEach((doc) => {
+        const tipData = doc.data();
         if (tipData.battleHostId === battleData.host1Id) {
-          host1TotalTips += amount;
+          host1TotalTips += tipData.amount;
         } else if (tipData.battleHostId === battleData.host2Id) {
-          host2TotalTips += amount;
+          host2TotalTips += tipData.amount;
         }
       });
 
+      // Use transaction totals if available, otherwise fall back to battle data
       const finalHost1Tips = host1TotalTips > 0 ? host1TotalTips : (battleData.host1Tips ?? 0);
       const finalHost2Tips = host2TotalTips > 0 ? host2TotalTips : (battleData.host2Tips ?? 0);
 
-      // Safely coalesce undefined to 0 before comparison
-      const host1Safe = finalHost1Tips ?? 0;
-      const host2Safe = finalHost2Tips ?? 0;
-
+      // Determine winner based on tips
       const winnerId =
-        host1Safe > host2Safe
+        finalHost1Tips > finalHost2Tips
           ? battleData.host1Id
-          : host1Safe < host2Safe
+          : finalHost1Tips < finalHost2Tips
           ? battleData.host2Id
-          : null;
+          : null; // Tie
 
-      const totalTips = host1Safe + host2Safe;
+      // Calculate reward (e.g., 50% of total tips)
+      const totalTips = finalHost1Tips + finalHost2Tips;
       const rewardAmount = winnerId ? Math.floor(totalTips * 0.5) : 0;
 
+      // Update battle status with accurate tip totals
       await updateDoc(battleRef, {
         status: 'ended',
         endedAt: serverTimestamp(),
-        duration: duration ?? battleData.duration,
-        peakViewers: viewerCount ?? battleData.peakViewers,
-        host1Tips: host1Safe,
-        host2Tips: host2Safe,
-        totalTips,
+        duration: duration || (battleData.duration ?? 0),
+        peakViewers: viewerCount || (battleData.peakViewers ?? 0),
+        host1Tips: finalHost1Tips,
+        host2Tips: finalHost2Tips,
+        totalTips: totalTips,
         winnerId,
         rewardAmount,
         updatedAt: serverTimestamp(),
       });
 
+      // Award reward to winner
       if (winnerId && rewardAmount > 0) {
+        // Add stars to winner's wallet
         const rewardResult = await addStars(
           winnerId,
           rewardAmount,
@@ -120,6 +118,7 @@ export async function POST(request: NextRequest) {
         );
 
         if (rewardResult.success) {
+          // Create reward transaction
           const transaction = await createTransaction({
             userId: winnerId,
             type: 'battle_reward',
@@ -129,14 +128,15 @@ export async function POST(request: NextRequest) {
             description: `Battle reward for winning battle ${streamId}`,
             metadata: {
               battleId: streamId,
-              totalTips,
-              host1Tips: host1Safe,
-              host2Tips: host2Safe,
+              totalTips: totalTips,
+              host1Tips: finalHost1Tips,
+              host2Tips: finalHost2Tips,
             },
           });
 
           await completeTransaction(transaction.id);
 
+          // Update battle with reward transaction ID
           await updateDoc(battleRef, {
             rewardTransactionId: transaction.id,
             updatedAt: serverTimestamp(),
@@ -150,43 +150,43 @@ export async function POST(request: NextRequest) {
         success: true,
         winnerId,
         rewardAmount,
-        host1Tips: host1Safe,
-        host2Tips: host2Safe,
-        totalTips,
+        host1Tips: finalHost1Tips,
+        host2Tips: finalHost2Tips,
+        totalTips: totalTips,
       });
-    }
-
-    if (type === 'liveparty') {
+    } else if (type === 'liveparty') {
+      // Handle LiveParty end
       const partyRef = doc(firestore, COLLECTIONS.LIVEPARTIES, streamId);
       const partySnap = await getDoc(partyRef);
 
       if (!partySnap.exists()) {
-        return NextResponse.json({ error: 'LiveParty not found' }, { status: 404 });
+        return NextResponse.json(
+          { error: 'LiveParty not found' },
+          { status: 404 }
+        );
       }
 
-      const partyData = partySnap.data() || {};
+      const partyData = partySnap.data();
 
+      // Update LiveParty status
       await updateDoc(partyRef, {
         status: 'ended',
         endedAt: serverTimestamp(),
-        duration: duration ?? partyData.duration,
+        duration: duration || partyData.duration,
         updatedAt: serverTimestamp(),
       });
 
-      const totalRevenue = (partyData.totalEntryRevenue ?? 0) + (partyData.totalViewerRevenue ?? 0);
-      const totalTips = partyData.totalTips ?? 0;
-
       return NextResponse.json({
         success: true,
-        totalRevenue,
-        totalTips,
+        totalRevenue: partyData.totalEntryRevenue + partyData.totalViewerRevenue,
+        totalTips: partyData.totalTips,
       });
+    } else {
+      return NextResponse.json(
+        { error: 'Invalid stream type. Must be "battle" or "liveparty"' },
+        { status: 400 }
+      );
     }
-
-    return NextResponse.json(
-      { error: 'Invalid stream type. Must be "battle" or "liveparty"' },
-      { status: 400 }
-    );
   } catch (error) {
     console.error('Error handling stream end:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -199,3 +199,6 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+
+
