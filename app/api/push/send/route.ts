@@ -3,11 +3,21 @@ import { getFirestoreInstance, COLLECTIONS } from '@/lib/firebase';
 import { doc, getDoc, getDocs, query, where, collection } from 'firebase/firestore';
 import { getAuthenticatedUserId } from '@/lib/auth-server';
 
+// Server-only: Firebase Admin is only available on the server
+if (typeof window !== 'undefined') {
+  throw new Error('firebase-admin can only be used on the server');
+}
+
 // Initialize Firebase Admin for FCM
-let admin: typeof import('firebase-admin');
-let messaging: any;
+let admin: typeof import('firebase-admin') | null = null;
+let messaging: any = null;
 
 async function getAdminMessaging() {
+  // Server-only guard
+  if (typeof window !== 'undefined') {
+    throw new Error('firebase-admin can only be used on the server');
+  }
+
   if (!admin) {
     admin = await import('firebase-admin');
     
