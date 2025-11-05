@@ -194,20 +194,18 @@ export default function MessageBubble({
           )}
 
           {/* File attachment */}
-          {message.attachments?.some(
-            (att) =>
-              !att.type.startsWith('image/') &&
-              !att.type.startsWith('video/') &&
-              !att.type.startsWith('audio/')
-          ) && (
+          {message.attachments?.some((att) => {
+            const attachment = typeof att === 'string' ? { url: att, type: 'file' } : att;
+            const type = attachment.type || '';
+            return !type.startsWith('image/') && !type.startsWith('video/') && !type.startsWith('audio/');
+          }) && (
             <div className="mt-2 space-y-2">
               {message.attachments
-                .filter(
-                  (att) =>
-                    !att.type.startsWith('image/') &&
-                    !att.type.startsWith('video/') &&
-                    !att.type.startsWith('audio/')
-                )
+                ?.map((att) => typeof att === 'string' ? { url: att, type: 'file', name: 'File' } : att)
+                .filter((att) => {
+                  const type = att.type || '';
+                  return !type.startsWith('image/') && !type.startsWith('video/') && !type.startsWith('audio/');
+                })
                 .map((att, idx) => (
                   <a
                     key={idx}
@@ -218,7 +216,7 @@ export default function MessageBubble({
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
-                    <span className="text-sm">{att.name}</span>
+                    <span className="text-sm">{att.name || 'File'}</span>
                   </a>
                 ))}
             </div>
