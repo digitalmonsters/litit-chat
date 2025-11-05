@@ -106,3 +106,109 @@ export const joinAnimation: Variants = {
   },
 };
 
+
+/**
+ * Match celebration animation
+ */
+export const matchCelebration: Variants = {
+  initial: {
+    opacity: 0,
+    scale: 0,
+    rotate: -180,
+  },
+  animate: {
+    opacity: 1,
+    scale: [0, 1.2, 1],
+    rotate: 0,
+    transition: {
+      duration: 0.6,
+      ease: 'easeOut',
+    },
+  },
+  exit: {
+    opacity: 0,
+    scale: 0,
+    rotate: 180,
+    transition: {
+      duration: 0.4,
+    },
+  },
+};
+
+/**
+ * Like button press animation
+ */
+export const likePress: Variants = {
+  initial: { scale: 1 },
+  tap: { 
+    scale: 0.9,
+    transition: { duration: 0.1 }
+  },
+  success: {
+    scale: [0.9, 1.3, 1],
+    transition: {
+      duration: 0.4,
+      ease: 'easeOut',
+    },
+  },
+};
+
+/**
+ * Swipe card animation
+ */
+export const swipeCard: Variants = {
+  center: {
+    x: 0,
+    y: 0,
+    rotate: 0,
+    opacity: 1,
+    transition: {
+      type: 'spring',
+      stiffness: 300,
+      damping: 30,
+    },
+  },
+  swipeLeft: {
+    x: -1000,
+    rotate: -30,
+    opacity: 0,
+    transition: {
+      duration: 0.4,
+      ease: 'easeIn',
+    },
+  },
+  swipeRight: {
+    x: 1000,
+    rotate: 30,
+    opacity: 0,
+    transition: {
+      duration: 0.4,
+      ease: 'easeIn',
+    },
+  },
+};
+
+/**
+ * Flame hearts burst (for match)
+ */
+export function flameHeartsBurst(count: number = 20) {
+  return Array.from({ length: count }, (_, i) => ({
+    initial: {
+      opacity: 0,
+      scale: 0,
+      x: 0,
+      y: 0,
+    },
+    animate: {
+      opacity: [0, 1, 1, 0],
+      scale: [0, 1, 1, 0],
+      x: Math.cos((i / count) * Math.PI * 2) * (100 + Math.random() * 100),
+      y: Math.sin((i / count) * Math.PI * 2) * (100 + Math.random() * 100) - 50,
+    },
+    transition: {
+      duration: 2 + Math.random(),
+      ease: 'easeOut',
+      delay: i * 0.02,
+    },
+  }));
+}

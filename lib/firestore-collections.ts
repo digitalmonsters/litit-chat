@@ -395,3 +395,55 @@ export interface UpdateWalletData {
   totalUsdSpent?: number;
   metadata?: Record<string, unknown>;
 }
+
+// ============================================================================
+// FLAMES COLLECTION (24h Stories)
+// ============================================================================
+
+export interface FirestoreFlame {
+  id: string; // Document ID
+  userId: string; // User who posted the flame
+  mediaUrl: string; // Firebase Storage URL or Bunny CDN URL
+  mediaType: 'image' | 'video'; // Media type
+  caption?: string; // Optional caption
+  thumbnailUrl?: string; // Thumbnail URL (for videos)
+  
+  // Video metadata (if mediaType is 'video')
+  guid?: string; // Bunny Stream video GUID
+  duration?: number; // Video duration in seconds
+  
+  // View tracking
+  viewCount?: number; // Number of views
+  viewedBy?: string[]; // User IDs who viewed this flame
+  
+  // Timestamps
+  createdAt: Timestamp;
+  expiresAt: Timestamp; // Auto-expires after 24h
+  
+  // Optional metadata
+  metadata?: Record<string, unknown>;
+}
+
+// ============================================================================
+// LIKES COLLECTION
+// ============================================================================
+
+export interface FirestoreLike {
+  id: string; // Document ID (format: userId_targetUserId)
+  userId: string; // User who performed the action
+  targetUserId: string; // User being liked/passed
+  type: 'like' | 'pass'; // Action type
+  createdAt: Timestamp;
+}
+
+// ============================================================================
+// MATCHES COLLECTION
+// ============================================================================
+
+export interface FirestoreMatch {
+  id: string; // Document ID (format: sorted userIds joined with _)
+  userIds: [string, string]; // Tuple of matched user IDs (sorted)
+  status: 'active' | 'unmatched'; // Match status
+  createdAt: Timestamp;
+  metadata?: Record<string, unknown>;
+}
