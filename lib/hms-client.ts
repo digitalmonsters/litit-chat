@@ -6,8 +6,10 @@
 
 const HMS_API_BASE_URL = 'https://api.100ms.live/v2';
 const HMS_ACCESS_KEY = process.env.HMS_ACCESS_KEY || '';
-const HMS_SECRET = process.env.HMS_SECRET || '';
+const HMS_SECRET = process.env.HMS_APP_SECRET || process.env.HMS_SECRET || '';
 const HMS_SIP_ENDPOINT = process.env.HMS_SIP_ENDPOINT || '';
+const HMS_SIP_USERNAME = process.env.HMS_SIP_USERNAME || HMS_ACCESS_KEY;
+const HMS_SIP_PASSWORD = process.env.HMS_SIP_PASSWORD || '';
 
 /**
  * Generate HMAC signature for HMS API requests
