@@ -27,6 +27,51 @@ export interface ProfileModalProps {
   onTip?: (userId: string) => void;
 }
 
+/**
+ * Calculate age from date of birth string (YYYY-MM-DD)
+ */
+function calculateAge(dateOfBirth: string): number {
+  const today = new Date();
+  const birthDate = new Date(dateOfBirth);
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  
+  return age;
+}
+
+/**
+ * Convert country code to flag emoji
+ */
+function getCountryFlag(countryCode: string): string {
+  const codePoints = countryCode
+    .toUpperCase()
+    .split('')
+    .map(char => 127397 + char.charCodeAt(0));
+  return String.fromCodePoint(...codePoints);
+}
+
+/**
+ * Get country name from country code
+ */
+function getCountryName(countryCode: string): string {
+  const countryNames: Record<string, string> = {
+    'US': 'United States',
+    'PH': 'Philippines',
+    'TH': 'Thailand',
+    'MY': 'Malaysia',
+    'KH': 'Cambodia',
+    'VN': 'Vietnam',
+    'ID': 'Indonesia',
+    'SG': 'Singapore',
+    // Add more as needed
+  };
+  return countryNames[countryCode.toUpperCase()] || countryCode;
+}
+
 export default function ProfileModal({
   user,
   isOpen,
@@ -189,9 +234,20 @@ export default function ProfileModal({
               <div className="p-6">
                 {/* Name and basic info */}
                 <motion.div variants={flameFadeIn} className="mb-4">
-                  <h1 className="text-3xl font-bold text-white mb-2">
-                    {user.displayName}
-                  </h1>
+                  <div className="flex items-center gap-3 mb-2">
+                    <h1 className="text-3xl font-bold text-white">
+                      {user.displayName}
+                    </h1>
+                    {user.dateOfBirth && (
+                      <span className="text-2xl text-gray-300">
+                        {calculateAge(user.dateOfBirth)}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {user.username && (
+                    <p className="text-[#FF5E3A] text-sm mb-2">@{user.username}</p>
+                  )}
                   
                   {user.bio && (
                     <p className="text-gray-300 leading-relaxed">
@@ -200,8 +256,8 @@ export default function ProfileModal({
                   )}
                 </motion.div>
 
-                {/* Location */}
-                {user.location && (
+                {/* Location with country flag */}
+                {(user.location || user.countryCode) && (
                   <motion.div
                     variants={flameFadeIn}
                     className="flex items-center gap-2 text-gray-400 mb-4"
@@ -210,11 +266,16 @@ export default function ProfileModal({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
+                    {user.countryCode && (
+                      <span className="text-xl">{getCountryFlag(user.countryCode)}</span>
+                    )}
                     <span>
                       {typeof user.location === 'string'
                         ? user.location
-                        : (user.location.address ?? 
-                           `${user.location.city ?? ''}${user.location.city && user.location.country ? ', ' : ''}${user.location.country ?? ''}`)}
+                        : user.location
+                        ? (user.location.address ?? 
+                           `${user.location.city ?? ''}${user.location.city && user.location.country ? ', ' : ''}${user.location.country ?? ''}`)
+                        : getCountryName(user.countryCode ?? '')}
                     </span>
                   </motion.div>
                 )}

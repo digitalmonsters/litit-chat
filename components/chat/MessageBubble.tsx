@@ -86,69 +86,77 @@ export default function MessageBubble({
       animate="visible"
       variants={flameFadeIn}
       className={cn(
-        'flex items-end gap-2 px-4 py-2',
+        'flex items-end gap-2 px-4 py-1.5',
         isOwn ? 'flex-row-reverse' : 'flex-row',
         className
       )}
     >
       {/* Avatar */}
       {showAvatar && !isOwn && (
-        <div className="flex-shrink-0">
+        <motion.div 
+          className="flex-shrink-0"
+          whileHover={{ scale: 1.1 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+        >
           {message.senderAvatar ? (
             <img
               src={message.senderAvatar}
               alt={message.senderName ?? 'User'}
-              className="w-8 h-8 rounded-full object-cover"
+              className="w-9 h-9 rounded-full object-cover ring-2 ring-[#FF5E3A]/20"
             />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF5E3A] to-[#FF9E57] flex items-center justify-center">
-              <span className="text-white text-xs font-semibold">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#FF5E3A] to-[#FF9E57] flex items-center justify-center ring-2 ring-[#FF5E3A]/20">
+              <span className="text-white text-sm font-semibold">
                 {message.senderName?.charAt(0)?.toUpperCase() ?? '?'}
               </span>
             </div>
           )}
-        </div>
+        </motion.div>
       )}
 
       {/* Message content */}
       <div
         className={cn(
-          'flex flex-col gap-1',
+          'flex flex-col gap-0.5',
           isOwn ? 'items-end' : 'items-start',
-          showAvatar && !isOwn ? 'max-w-[70%]' : 'max-w-[80%]'
+          showAvatar && !isOwn ? 'max-w-[70%]' : 'max-w-[75%]'
         )}
       >
-        {!isOwn && (
-          <span className="text-xs font-medium text-gray-400">
+        {!isOwn && showAvatar && (
+          <span className="text-xs font-medium text-gray-400 ml-3 mb-0.5">
             {message.senderName ?? 'Unknown'}
           </span>
         )}
 
-        {/* Message bubble */}
-        <div
+        {/* Message bubble - Snapchat style with tail */}
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 10 }}
           className={cn(
-            'rounded-2xl px-4 py-2 shadow-sm',
+            'relative rounded-3xl px-4 py-2.5 shadow-lg',
             isOwn
-              ? 'bg-gradient-to-r from-[#FF5E3A] to-[#FF9E57] text-white'
-              : 'bg-gray-800 text-white'
+              ? 'bg-gradient-to-r from-[#FF5E3A] to-[#FF9E57] text-white rounded-br-md'
+              : 'bg-gray-800 text-white rounded-bl-md'
           )}
         >
           {/* Text content */}
           {message.content && (
-            <p className="break-words text-sm leading-relaxed">{message.content}</p>
+            <p className="break-words text-[15px] leading-relaxed">{message.content}</p>
           )}
 
           {/* Image attachment */}
           {message.attachments?.some((att) => att.type.startsWith('image/')) && (
-            <div className="mt-2 space-y-2">
+            <div className={cn('space-y-2', message.content && 'mt-2')}>
               {message.attachments
                 .filter((att) => att.type.startsWith('image/'))
                 .map((att, idx) => (
-                  <img
+                  <motion.img
                     key={idx}
                     src={att.url}
                     alt={att.name}
-                    className="max-w-full rounded-lg"
+                    className="max-w-full rounded-2xl cursor-pointer"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                   />
                 ))}
             </div>
@@ -216,29 +224,29 @@ export default function MessageBubble({
           {message.isEdited && (
             <span className="ml-2 text-xs opacity-70">(edited)</span>
           )}
-        </div>
+        </motion.div>
 
         {/* Timestamp and status */}
-        <div className="flex items-center gap-2">
-          {showTimestamp && (
-            <span className="text-xs text-gray-500">
+        {showTimestamp && (
+          <div className={cn('flex items-center gap-1.5 mt-0.5', isOwn ? 'ml-3' : 'mr-3')}>
+            <span className="text-[11px] text-gray-500 font-medium">
               {formatTime(message.timestamp)}
             </span>
-          )}
-          {isOwn && message.status && (
-            <span className="text-xs text-gray-500">
-              {message.status === 'sending' && '⏳'}
-              {message.status === 'sent' && '✓'}
-              {message.status === 'delivered' && '✓✓'}
-              {message.status === 'read' && '✓✓'}
-              {message.status === 'failed' && '✗'}
-            </span>
-          )}
-        </div>
+            {isOwn && message.status && (
+              <span className="text-xs text-gray-500">
+                {message.status === 'sending' && '⏳'}
+                {message.status === 'sent' && '✓'}
+                {message.status === 'delivered' && '✓✓'}
+                {message.status === 'read' && <span className="text-[#FF5E3A]">✓✓</span>}
+                {message.status === 'failed' && '✗'}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Spacer for own messages */}
-      {showAvatar && isOwn && <div className="h-8 w-8 flex-shrink-0" />}
+      {showAvatar && isOwn && <div className="h-9 w-9 flex-shrink-0" />}
     </motion.div>
   );
 }

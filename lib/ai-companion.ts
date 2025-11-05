@@ -42,10 +42,10 @@ export const AI_COMPANIONS: Record<AIPersonality, AICompanionConfig> = {
 };
 
 const PERSONALITY_PROMPTS: Record<AIPersonality, string> = {
-  fun: \`You are Alex, a fun and energetic AI companion. Keep responses concise (1-3 sentences).\`,
-  flirty: \`You are Riley, a charming AI companion. Keep responses concise (1-3 sentences).\`,
-  supportive: \`You are Sam, a supportive AI companion. Keep responses concise (1-3 sentences).\`,
-  creative: \`You are Jordan, a creative AI companion. Keep responses concise (1-3 sentences).\`,
+  fun: `You are Alex, a fun and energetic AI companion. Keep responses concise (1-3 sentences).`,
+  flirty: `You are Riley, a charming AI companion. Keep responses concise (1-3 sentences).`,
+  supportive: `You are Sam, a supportive AI companion. Keep responses concise (1-3 sentences).`,
+  creative: `You are Jordan, a creative AI companion. Keep responses concise (1-3 sentences).`,
 };
 
 let openaiClient: OpenAI | null = null;
@@ -113,10 +113,10 @@ export async function generateAIReply(
 
 export async function createAICompanion(firestore: any, personality: AIPersonality): Promise<any> {
   const { doc, setDoc, Timestamp } = await import('firebase/firestore');
-  const { COLLECTIONS } = await import('./firestore-collections');
+  const { COLLECTIONS } = await import('./firebase');
   
   const config = AI_COMPANIONS[personality];
-  const aiId = \`ai-\${personality}-\${Date.now()}\`;
+  const aiId = `ai-${personality}-${Date.now()}`;
   
   const aiUserData = {
     id: aiId,
@@ -141,7 +141,7 @@ export async function createAICompanion(firestore: any, personality: AIPersonali
 
 export async function getOrCreateAICompanion(firestore: any): Promise<any> {
   const { collection, query, where, getDocs, limit } = await import('firebase/firestore');
-  const { COLLECTIONS } = await import('./firestore-collections');
+  const { COLLECTIONS } = await import('./firebase');
   
   const aiQuery = query(
     collection(firestore, COLLECTIONS.USERS),
@@ -174,7 +174,7 @@ export async function getConversationHistory(
   limitCount: number = 10
 ): Promise<Array<{ sender: 'user' | 'ai'; message: string }>> {
   const { collection, query, where, orderBy, limit: firestoreLimit, getDocs } = await import('firebase/firestore');
-  const { COLLECTIONS } = await import('./firestore-collections');
+  const { COLLECTIONS } = await import('./firebase');
   
   const messagesQuery = query(
     collection(firestore, COLLECTIONS.MESSAGES),
@@ -187,7 +187,7 @@ export async function getConversationHistory(
   return messagesSnapshot.docs.map(doc => {
     const data = doc.data();
     return {
-      sender: data.senderId?.startsWith('ai-') ? 'ai' : 'user',
+      sender: (data.senderId?.startsWith('ai-') ? 'ai' : 'user') as 'user' | 'ai',
       message: data.content || '',
     };
   }).reverse();

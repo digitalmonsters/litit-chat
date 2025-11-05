@@ -204,11 +204,11 @@ export function flameHeartsBurst(count: number = 20) {
       scale: [0, 1, 1, 0],
       x: Math.cos((i / count) * Math.PI * 2) * (100 + Math.random() * 100),
       y: Math.sin((i / count) * Math.PI * 2) * (100 + Math.random() * 100) - 50,
-      transition: {
-        duration: 2 + Math.random(),
-        ease: 'easeOut',
-        delay: i * 0.02,
-      },
+    },
+    transition: {
+      duration: 2 + Math.random(),
+      ease: 'easeOut',
+      delay: i * 0.02,
     },
   }));
 }

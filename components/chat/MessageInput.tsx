@@ -22,6 +22,7 @@ import {
 import { getFirestoreInstance } from '@/lib/firebase';
 import { COLLECTIONS } from '@/lib/firebase';
 import { flameFadeIn } from '@/lib/flame-transitions';
+import EmojiPicker from './EmojiPicker';
 
 // Snap Camera Kit integration (optional)
 // Note: Install @snap/camera-kit package for full camera integration
@@ -47,6 +48,7 @@ export default function MessageInput({
   const [isLocked, setIsLocked] = useState(false);
   const [unlockPrice, setUnlockPrice] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -151,6 +153,7 @@ export default function MessageInput({
       setFilePreview(null);
       setIsLocked(false);
       setUnlockPrice('');
+      setShowEmojiPicker(false);
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';
       }
@@ -195,8 +198,28 @@ export default function MessageInput({
     }
   };
 
+  const handleEmojiSelect = (emoji: string) => {
+    setMessage((prev) => prev + emoji);
+    setShowEmojiPicker(false);
+    textareaRef.current?.focus();
+  };
+
   return (
-    <div className={cn('bg-[#1E1E1E] border-t border-gray-800', className)}>
+    <div className={cn('bg-[#1E1E1E] border-t border-gray-800 relative', className)}>
+      {/* Emoji Picker */}
+      <AnimatePresence>
+        {showEmojiPicker && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="absolute bottom-full left-4 mb-2 z-50"
+          >
+            <EmojiPicker onEmojiSelect={handleEmojiSelect} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* File preview */}
       <AnimatePresence>
         {selectedFile && (
@@ -280,6 +303,21 @@ export default function MessageInput({
       <div className="flex items-end gap-2 p-4">
         {/* Media upload buttons */}
         <div className="flex items-center gap-1">
+          {/* Emoji picker button */}
+          <button
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            disabled={disabled || uploading}
+            className={cn(
+              'flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-colors disabled:opacity-50',
+              showEmojiPicker
+                ? 'bg-gradient-to-r from-[#FF5E3A] to-[#FF9E57] text-white'
+                : 'bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white'
+            )}
+            title="Add emoji"
+          >
+            <span className="text-xl">😊</span>
+          </button>
+
           {/* Image/Video/Audio upload */}
           <button
             onClick={() => fileInputRef.current?.click()}

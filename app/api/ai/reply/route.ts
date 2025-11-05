@@ -3,7 +3,7 @@ import { getFirestoreInstance } from '@/lib/firebase';
 import { generateAIReply, getConversationHistory, isAICompanion } from '@/lib/ai-companion';
 import type { AIPersonality } from '@/lib/ai-companion';
 import { doc, getDoc } from 'firebase/firestore';
-import { COLLECTIONS } from '@/lib/firestore-collections';
+import { COLLECTIONS } from '@/lib/firebase';
 
 export async function POST(request: NextRequest) {
   try {

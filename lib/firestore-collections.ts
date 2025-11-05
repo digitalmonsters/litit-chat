@@ -25,6 +25,15 @@ export interface FirestoreUser {
   location?: string | { address?: string; city?: string; country?: string };
   trialStartDate?: Timestamp | Date | null;
   trialEndDate?: Timestamp | Date | null;
+  
+  // AI Companion fields
+  isAI?: boolean; // Flag to identify AI profiles
+  aiPersonality?: 'fun' | 'flirty' | 'supportive' | 'creative';
+  introScript?: string; // AI intro message
+  replyScript?: string; // AI reply template
+  dateOfBirth?: string; // DOB for age calculation (YYYY-MM-DD)
+  countryCode?: string; // ISO country code for flag
+  username?: string; // Unique username
 
   // Timestamps
   createdAt?: Timestamp;
@@ -421,5 +430,29 @@ export interface FirestoreFlame {
   expiresAt: Timestamp; // Auto-expires after 24h
   
   // Optional metadata
+  metadata?: Record<string, unknown>;
+}
+
+// ============================================================================
+// LIKES COLLECTION
+// ============================================================================
+
+export interface FirestoreLike {
+  id: string; // Document ID (format: userId_targetUserId)
+  userId: string; // User who performed the action
+  targetUserId: string; // User being liked/passed
+  type: 'like' | 'pass'; // Action type
+  createdAt: Timestamp;
+}
+
+// ============================================================================
+// MATCHES COLLECTION
+// ============================================================================
+
+export interface FirestoreMatch {
+  id: string; // Document ID (format: sorted userIds joined with _)
+  userIds: [string, string]; // Tuple of matched user IDs (sorted)
+  status: 'active' | 'unmatched'; // Match status
+  createdAt: Timestamp;
   metadata?: Record<string, unknown>;
 }

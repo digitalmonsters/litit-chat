@@ -58,13 +58,13 @@ export async function POST(request: NextRequest) {
     await setDoc(chatRef, chatData);
 
     const welcomeMessages: Record<string, string> = {
-      fun: \`Hey \${userName}! 🎉 I'm \${aiCompanion.displayName}! What's on your mind?\`,
-      flirty: \`Hey \${userName}! 😘 I'm \${aiCompanion.displayName}. How's your day?\`,
-      supportive: \`Hi \${userName}! 💙 I'm \${aiCompanion.displayName}. How are you feeling?\`,
-      creative: \`Hello \${userName}! 🎨 I'm \${aiCompanion.displayName}. What inspires you?\`,
+      fun: `Hey ${userName}! 🎉 I'm ${aiCompanion.displayName}! What's on your mind?`,
+      flirty: `Hey ${userName}! 😘 I'm ${aiCompanion.displayName}. How's your day?`,
+      supportive: `Hi ${userName}! 💙 I'm ${aiCompanion.displayName}. How are you feeling?`,
+      creative: `Hello ${userName}! 🎨 I'm ${aiCompanion.displayName}. What inspires you?`,
     };
 
-    const welcomeMessage = welcomeMessages[aiCompanion.aiPersonality] || \`Hi \${userName}! I'm \${aiCompanion.displayName}.\`;
+    const welcomeMessage = welcomeMessages[aiCompanion.aiPersonality] || `Hi ${userName}! I'm ${aiCompanion.displayName}.`;
     const messageRef = doc(collection(firestore, COLLECTIONS.MESSAGES));
     await setDoc(messageRef, {
       id: messageRef.id,
