@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { FirestoreMessage } from '@/lib/firestore-collections';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
+import { flameStagger, flameStaggerItem, messageSendSpring, messageReceiveSpring } from '@/lib/flame-transitions';
 
 export interface MessageListProps {
   messages: FirestoreMessage[];
@@ -51,34 +53,49 @@ export default function MessageList({
         className
       )}
     >
-      <div className="flex-1 space-y-1 p-4">
-        {messages.map((message, index) => {
-          const isOwn = message.senderId === currentUserId;
-          const prevMessage = index > 0 ? messages[index - 1] : null;
-          const showAvatar =
-            !isOwn &&
-            (!prevMessage || prevMessage.senderId !== message.senderId);
+      <motion.div
+        className="flex-1 space-y-1 p-4"
+        variants={flameStagger}
+        initial="initial"
+        animate="animate"
+      >
+        <AnimatePresence mode="popLayout">
+          {messages.map((message, index) => {
+            const isOwn = message.senderId === currentUserId;
+            const prevMessage = index > 0 ? messages[index - 1] : null;
+            const showAvatar =
+              !isOwn &&
+              (!prevMessage || prevMessage.senderId !== message.senderId);
 
-          return (
-            <MessageBubble
-              key={message.id}
-              message={message}
-              isOwn={isOwn}
-              showAvatar={showAvatar}
-              showTimestamp={
-                index === messages.length - 1 ||
-                (messages[index + 1]?.timestamp?.toMillis &&
-                  message.timestamp?.toMillis &&
-                  (messages[index + 1].timestamp?.toMillis() ?? 0) -
-                    (message.timestamp?.toMillis() ?? 0) >
-                    300000)
-              }
-            />
-          );
-        })}
+            return (
+              <motion.div
+                key={message.id}
+                layout
+                variants={isOwn ? messageSendSpring : messageReceiveSpring}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                <MessageBubble
+                  message={message}
+                  isOwn={isOwn}
+                  showAvatar={showAvatar}
+                  showTimestamp={
+                    index === messages.length - 1 ||
+                    (messages[index + 1]?.timestamp?.toMillis &&
+                      message.timestamp?.toMillis &&
+                      (messages[index + 1].timestamp?.toMillis() ?? 0) -
+                        (message.timestamp?.toMillis() ?? 0) >
+                        300000)
+                  }
+                />
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
         {isTyping && <TypingIndicator userName={typingUser} />}
         <div ref={messagesEndRef} />
-      </div>
+      </motion.div>
     </div>
   );
 }

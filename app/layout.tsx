@@ -4,6 +4,8 @@ import "./globals.css";
 import PWAProvider from "@/components/layout/PWAProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { WalletProvider } from "@/contexts/WalletContext";
+import { PresenceProvider } from "@/contexts/PresenceContext";
+import PushBannerProvider from "@/components/ui/PushBannerProvider";
 import { initializeFirebase } from "@/lib/firebase";
 
 const geistSans = Geist({
@@ -83,9 +85,13 @@ export default function RootLayout({
       >
         <PWAProvider>
           <AuthProvider>
-            <WalletProvider>
-              {children}
-            </WalletProvider>
+            <PresenceProvider>
+              <WalletProvider>
+                <PushBannerProvider>
+                  {children}
+                </PushBannerProvider>
+              </WalletProvider>
+            </PresenceProvider>
           </AuthProvider>
         </PWAProvider>
       </body>

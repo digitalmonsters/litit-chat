@@ -24,19 +24,19 @@ export default function Sidebar({
   return (
     <div
       className={cn(
-        'flex h-full flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900',
+        'flex h-full flex-col border-r border-zinc-800/50 bg-[#1E1E1E]',
         className
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-zinc-200 p-4 dark:border-zinc-800">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+      <div className="flex items-center justify-between border-b border-zinc-800/50 p-4">
+        <h2 className="text-lg font-semibold bg-gradient-to-r from-[#FF5E3A] to-[#FF9E57] bg-clip-text text-transparent">
           Chats
         </h2>
         {onNewChat && (
           <button
             onClick={onNewChat}
-            className="rounded-lg p-2 text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+            className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800/50 hover:text-[#FF9E57]"
             title="New chat"
           >
             <svg
@@ -60,12 +60,12 @@ export default function Sidebar({
       <div className="flex-1 overflow-y-auto">
         {rooms.length === 0 ? (
           <div className="flex h-full items-center justify-center p-4">
-            <p className="text-center text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="text-center text-sm text-zinc-400">
               No chats yet. Start a new conversation!
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+          <div className="divide-y divide-zinc-800/50">
             {rooms.map((room) => {
               const isActive = room.id === currentRoomId;
               const lastMessage = room.lastMessage;
@@ -76,8 +76,8 @@ export default function Sidebar({
                   key={room.id}
                   onClick={() => onRoomSelect(room.id)}
                   className={cn(
-                    'w-full px-4 py-3 text-left transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800',
-                    isActive && 'bg-zinc-100 dark:bg-zinc-800'
+                    'w-full px-4 py-3 text-left transition-colors hover:bg-zinc-800/30',
+                    isActive && 'bg-zinc-800/50 border-l-2 border-[#FF5E3A]'
                   )}
                 >
                   <div className="flex items-start gap-3">
@@ -89,22 +89,22 @@ export default function Sidebar({
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <h3 className="truncate font-medium text-zinc-900 dark:text-zinc-100">
+                        <h3 className="truncate font-medium text-zinc-100">
                           {room.name}
                         </h3>
                         {lastMessage && (
-                          <span className="flex-shrink-0 text-xs text-zinc-500 dark:text-zinc-400">
+                          <span className="flex-shrink-0 text-xs text-zinc-400">
                             {formatDate(lastMessage.timestamp)}
                           </span>
                         )}
                       </div>
                       {lastMessage && (
-                        <p className="mt-1 truncate text-sm text-zinc-600 dark:text-zinc-400">
+                        <p className="mt-1 truncate text-sm text-zinc-400">
                           {truncate(lastMessage.content, 50)}
                         </p>
                       )}
                       {hasUnread && (
-                        <span className="mt-1 inline-flex items-center rounded-full bg-indigo-600 px-2 py-0.5 text-xs font-medium text-white">
+                        <span className="mt-1 inline-flex items-center rounded-full bg-gradient-to-r from-[#FF5E3A] to-[#FF9E57] px-2 py-0.5 text-xs font-medium text-white">
                           {room.unreadCount}
                         </span>
                       )}

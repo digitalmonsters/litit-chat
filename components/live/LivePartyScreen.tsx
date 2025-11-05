@@ -9,9 +9,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { flameFadeIn } from '@/lib/flame-transitions';
+import { flameFadeIn, userJoinSpring, userLeaveSpring } from '@/lib/flame-transitions';
 import TipModal from '@/components/tip/TipModal';
+import { getOptimizedImageSrc } from '@/lib/image-utils';
 import { getFirestoreInstance, COLLECTIONS } from '@/lib/firebase';
 import { doc, onSnapshot, updateDoc, collection, addDoc, serverTimestamp, query, orderBy, limit } from 'firebase/firestore';
 import type { FirestoreUser } from '@/lib/firestore-collections';
@@ -229,19 +231,25 @@ export default function LivePartyScreen({
             {comments.map((comment) => (
               <motion.div
                 key={comment.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
+                variants={userJoinSpring}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                layout
                 className={cn(
                   'flex items-start gap-2',
                   comment.isTip && 'bg-gradient-to-r from-[#FF5E3A]/20 to-[#FF9E57]/20 rounded-lg p-2'
                 )}
               >
                 {comment.userAvatar ? (
-                  <img
-                    src={comment.userAvatar}
+                  <Image
+                    src={getOptimizedImageSrc(comment.userAvatar, { width: 24, height: 24, quality: 85 })}
                     alt={comment.userName}
-                    className="w-6 h-6 rounded-full"
+                    width={24}
+                    height={24}
+                    className="w-6 h-6 rounded-full object-cover"
+                    loading="lazy"
+                    unoptimized={!comment.userAvatar.includes('bunnycdn.com') && !comment.userAvatar.includes('bunny.net')}
                   />
                 ) : (
                   <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#FF5E3A] to-[#FF9E57] flex items-center justify-center">

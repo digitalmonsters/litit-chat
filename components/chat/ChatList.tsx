@@ -23,6 +23,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { flameFadeIn, flameStagger, flameStaggerItem } from '@/lib/flame-transitions';
 import type { FirestoreChat, FirestoreMessage } from '@/lib/firestore-collections';
+import { SkeletonCard, SkeletonText, SkeletonAvatar } from '@/components/ui/SkeletonLoader';
 
 export interface ChatListProps {
   onChatSelect: (chatId: string) => void;
@@ -114,9 +115,27 @@ export default function ChatList({
 
   if (loading) {
     return (
-      <div className={cn('flex items-center justify-center h-full', className)}>
-        <div className="w-8 h-8 border-2 border-[#FF5E3A] border-t-transparent rounded-full animate-spin" />
-      </div>
+      <motion.div
+        variants={flameStagger}
+        initial="initial"
+        animate="animate"
+        className={cn('flex flex-col h-full overflow-y-auto p-4 space-y-3', className)}
+      >
+        {Array.from({ length: 5 }).map((_, i) => (
+          <motion.div
+            key={i}
+            variants={flameStaggerItem}
+            initial="initial"
+            animate="animate"
+            className="flex items-center gap-4 p-3 bg-[#1E1E1E] rounded-xl"
+          >
+            <SkeletonAvatar size={48} />
+            <div className="flex-1">
+              <SkeletonText lines={2} />
+            </div>
+          </motion.div>
+        ))}
+      </motion.div>
     );
   }
 

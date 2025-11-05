@@ -10,7 +10,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { flameSlideUp, flameFadeIn } from '@/lib/flame-transitions';
+import { modalSpring, backdropSpring } from '@/lib/flame-transitions';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -42,19 +42,20 @@ export default function Modal({
         <>
           {/* Backdrop */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            variants={backdropSpring}
             onClick={onClose}
             className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
           />
 
           {/* Modal */}
           <motion.div
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
-            variants={flameSlideUp}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            variants={modalSpring}
             className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 z-50 md:max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >

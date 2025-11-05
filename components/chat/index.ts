@@ -13,8 +13,10 @@ export { default as ConnectionStatus } from './ConnectionStatus';
 export { default as EmptyState } from './EmptyState';
 export { default as MessageList } from './MessageList';
 export { default as TypingIndicator } from './TypingIndicator';
+export { default as ChatWithRealtime } from './ChatWithRealtime';
 
 export type { ChatListProps } from './ChatList';
+export type { ChatWithRealtimeProps } from './ChatWithRealtime';
 export type { ConversationProps } from './Conversation';
 export type { MessageInputProps } from './MessageInput';
 export type { MessageBubbleProps } from './MessageBubble';
