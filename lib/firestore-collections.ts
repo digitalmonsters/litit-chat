@@ -44,6 +44,39 @@ export interface FirestoreLiveStream {
 }
 
 // ============================================================================
+// CALLS COLLECTION
+// ============================================================================
+
+export interface FirestoreCall {
+  id: string; // Document ID
+  roomId: string; // 100ms room ID
+  hostId: string; // User ID of host/caller
+  participantIds: string[]; // User IDs of participants
+  type: 'direct' | 'group' | 'sip';
+  callerId?: string; // Legacy fields for backward compatibility
+  receiverId?: string; // Legacy fields for backward compatibility
+  calleeId?: string; // Alias for receiverId
+  sipEnabled?: boolean;
+  sipPhoneNumber?: string;
+  status: 'initiating' | 'initiated' | 'ringing' | 'active' | 'ended' | 'failed' | 'missed';
+
+  // Timing and billing
+  startedAt?: Timestamp;
+  endedAt?: Timestamp;
+  duration?: number; // Duration in minutes
+  durationMins?: number; // Alias for duration
+  cost?: number; // Cost in cents
+  ghlInvoiceId?: string; // GHL invoice ID for payment
+
+  // Timestamps
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+
+  // Metadata
+  metadata?: Record<string, unknown>;
+}
+
+// ============================================================================
 // BATTLES COLLECTION
 // ============================================================================
 
@@ -55,22 +88,22 @@ export interface FirestoreBattle {
   participants?: string[]; // Array of participant user IDs
   status: 'scheduled' | 'live' | 'ended' | 'cancelled';
   winnerId?: string; // Winner user ID (if battle ended)
-  
+
   // Tips
   host1Tips?: number; // Tips for host 1 (in stars)
   host2Tips?: number; // Tips for host 2 (in stars)
   totalTips?: number; // Total tips (in stars)
-  
+
   // Battle metrics
   duration?: number; // Duration in seconds
   peakViewers?: number; // Peak viewer count
-  
+
   // Timestamps
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
   startedAt?: Timestamp;
   endedAt?: Timestamp;
-  
+
   // Metadata
   metadata?: Record<string, unknown>;
 }
