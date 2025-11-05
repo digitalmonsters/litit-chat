@@ -395,3 +395,31 @@ export interface UpdateWalletData {
   totalUsdSpent?: number;
   metadata?: Record<string, unknown>;
 }
+
+// ============================================================================
+// FLAMES COLLECTION (24h Stories)
+// ============================================================================
+
+export interface FirestoreFlame {
+  id: string; // Document ID
+  userId: string; // User who posted the flame
+  mediaUrl: string; // Firebase Storage URL or Bunny CDN URL
+  mediaType: 'image' | 'video'; // Media type
+  caption?: string; // Optional caption
+  thumbnailUrl?: string; // Thumbnail URL (for videos)
+  
+  // Video metadata (if mediaType is 'video')
+  guid?: string; // Bunny Stream video GUID
+  duration?: number; // Video duration in seconds
+  
+  // View tracking
+  viewCount?: number; // Number of views
+  viewedBy?: string[]; // User IDs who viewed this flame
+  
+  // Timestamps
+  createdAt: Timestamp;
+  expiresAt: Timestamp; // Auto-expires after 24h
+  
+  // Optional metadata
+  metadata?: Record<string, unknown>;
+}

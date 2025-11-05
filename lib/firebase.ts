@@ -102,6 +102,8 @@ export const COLLECTIONS = {
   TRANSACTIONS: 'transactions',
   LIVESTREAMS: 'livestreams',
   TIPS: 'tips',
+  LIKES: 'likes',
+  MATCHES: 'matches',
 } as const;
 
 /**
