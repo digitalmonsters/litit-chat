@@ -139,6 +139,84 @@ async function saveContactToFirestore(contact: GHLContact): Promise<void> {
 }
 
 /**
+ * Handle subscription events from GHL
+ */
+async function handleSubscriptionEvent(
+  payload: GHLWebhookPayload,
+  action: 'created' | 'updated' | 'deleted'
+): Promise<void> {
+  const firestore = getFirestoreInstance();
+  
+  // Extract subscription data from payload
+  const subscription = (payload as any).subscription || (payload as any).data?.subscription;
+  
+  if (!subscription) {
+    console.warn('⚠️ Subscription data missing from payload');
+    return;
+  }
+
+  const userId = subscription.metadata?.userId;
+  const tier = subscription.metadata?.tier;
+  const contactId = subscription.contactId;
+
+  if (!userId && !contactId) {
+    console.warn('⚠️ Cannot process subscription: missing userId or contactId');
+    return;
+  }
+
+  // If we have contactId but no userId, try to find user by ghlContactId
+  let userDocId = userId;
+  if (!userDocId && contactId) {
+    // Query users collection for ghlContactId
+    // For simplicity, we'll just log this case
+    console.warn('⚠️ Need to query user by ghlContactId:', contactId);
+    return;
+  }
+
+  if (!userDocId) {
+    console.warn('⚠️ Could not determine user ID for subscription');
+    return;
+  }
+
+  const userRef = doc(firestore, 'users', userDocId);
+
+  if (action === 'deleted') {
+    // Subscription cancelled - downgrade to free
+    await setDoc(userRef, {
+      tier: 'free',
+      subscriptionStatus: 'canceled',
+      subscriptionEndDate: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+
+    console.log(`✅ Downgraded user ${userDocId} to free (GHL subscription deleted)`);
+  } else {
+    // Subscription created or updated
+    const updateData: any = {
+      subscriptionStatus: subscription.status || 'active',
+      updatedAt: serverTimestamp(),
+    };
+
+    if (tier) {
+      updateData.tier = tier;
+    }
+
+    if (subscription.id) {
+      updateData.metadata = {
+        ghlSubscriptionId: subscription.id,
+      };
+    }
+
+    await setDoc(userRef, updateData, { merge: true });
+
+    console.log(`✅ Updated user ${userDocId} subscription (${action})`);
+    if (tier) {
+      console.log(`   Tier: ${tier}`);
+    }
+  }
+}
+
+/**
  * POST /api/ghl/webhook
  * 
  * Handles incoming webhooks from GoHighLevel
@@ -206,6 +284,25 @@ export async function POST(request: NextRequest) {
         } else {
           console.warn('⚠️ ContactUpdate event missing contact data');
         }
+        break;
+
+      case 'SubscriptionCreate':
+      case 'subscription.create':
+      case 'subscription.created':
+        await handleSubscriptionEvent(payload, 'created');
+        break;
+
+      case 'SubscriptionUpdate':
+      case 'subscription.update':
+      case 'subscription.updated':
+        await handleSubscriptionEvent(payload, 'updated');
+        break;
+
+      case 'SubscriptionDelete':
+      case 'subscription.delete':
+      case 'subscription.deleted':
+      case 'subscription.cancelled':
+        await handleSubscriptionEvent(payload, 'deleted');
         break;
 
       default:

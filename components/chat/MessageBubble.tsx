@@ -13,6 +13,7 @@ import type { FirestoreMessage } from '@/lib/firestore-collections';
 import LockedMessage from './LockedMessage';
 import { flameFadeIn } from '@/lib/flame-transitions';
 import { useAuth } from '@/contexts/AuthContext';
+import VideoPlayer from './VideoPlayer';
 
 export interface MessageBubbleProps {
   message: FirestoreMessage;
@@ -160,11 +161,11 @@ export default function MessageBubble({
               {message.attachments
                 .filter((att) => att.type.startsWith('video/'))
                 .map((att, idx) => (
-                  <video
+                  <VideoPlayer
                     key={idx}
                     src={att.url}
-                    controls
-                    className="max-w-full rounded-lg"
+                    poster={att.thumbnail}
+                    className="max-w-full"
                   />
                 ))}
             </div>

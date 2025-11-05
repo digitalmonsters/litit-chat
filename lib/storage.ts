@@ -96,6 +96,144 @@ export async function uploadChatImage(
 }
 
 /**
+ * Upload video to chat (uses Bunny Stream for transcoding)
+ */
+export async function uploadChatVideo(
+  chatId: string,
+  file: File,
+  userId?: string
+): Promise<{ 
+  guid: string; 
+  urls: {
+    hls: string;
+    mp4: Record<string, string>;
+    thumbnail: string;
+    playbackUrl: string;
+  };
+  status: string;
+  thumbnail: string;
+}> {
+  // Validate file type
+  const validTypes = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo'];
+  if (!validTypes.some(type => file.type.startsWith(type))) {
+    throw new Error('File must be a video (MP4, WebM, MOV, or AVI)');
+  }
+
+  // Validate file size (max 500MB)
+  const maxSize = 500 * 1024 * 1024; // 500MB
+  if (file.size > maxSize) {
+    throw new Error('Video size must be less than 500MB');
+  }
+
+  // Upload to Bunny Stream via API
+  const formData = new FormData();
+  formData.append('video', file);
+  formData.append('chatId', chatId);
+  if (userId) {
+    formData.append('userId', userId);
+  }
+  formData.append('title', `chat-video-${chatId}-${Date.now()}`);
+
+  const response = await fetch('/api/media/upload-video', {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to upload video');
+  }
+
+  const result = await response.json();
+  return {
+    guid: result.guid,
+    urls: result.urls,
+    status: result.status,
+    thumbnail: result.urls.thumbnail,
+  };
+}
+
+/**
+ * Check video encoding status
+ */
+export async function checkVideoStatus(guid: string): Promise<{
+  success: boolean;
+  guid: string;
+  status: string;
+  statusCode: number;
+  ready: boolean;
+  encodeProgress: number;
+  urls: {
+    hls: string;
+    mp4: Record<string, string>;
+    thumbnail: string;
+    playbackUrl: string;
+  };
+  metadata: {
+    title: string;
+    width: number;
+    height: number;
+    length: number;
+    availableResolutions: string;
+    storageSize: number;
+    dateUploaded: string;
+  };
+}> {
+  const response = await fetch(`/api/media/video-status?guid=${guid}`);
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to check video status');
+  }
+
+  return response.json();
+}
+
+/**
+ * Set video thumbnail from timestamp
+ */
+export async function setVideoThumbnail(
+  guid: string,
+  thumbnailTime: number
+): Promise<void> {
+  const formData = new FormData();
+  formData.append('guid', guid);
+  formData.append('thumbnailTime', thumbnailTime.toString());
+
+  const response = await fetch('/api/media/set-thumbnail', {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to set thumbnail');
+  }
+}
+
+/**
+ * Upload custom thumbnail for video
+ */
+export async function uploadVideoThumbnail(
+  guid: string,
+  thumbnailFile: File
+): Promise<void> {
+  const formData = new FormData();
+  formData.append('guid', guid);
+  formData.append('thumbnail', thumbnailFile);
+
+  const response = await fetch('/api/media/set-thumbnail', {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to upload thumbnail');
+  }
+}
+
+/**
  * Delete file from storage
  */
 export async function deleteFile(url: string): Promise<void> {
