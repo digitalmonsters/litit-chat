@@ -167,9 +167,9 @@ export default function LockedMessage({
 
       {/* File info */}
       <div className="p-3 bg-gray-800/50 backdrop-blur-sm">
-        <p className="text-sm text-gray-300 truncate">{attachment.name}</p>
+        <p className="text-sm text-gray-300 truncate">{attachment.name ?? 'Locked Content'}</p>
         <p className="text-xs text-gray-500">
-          {(attachment.size / 1024).toFixed(1)} KB
+          {attachment.size ? ((attachment.size / 1024).toFixed(1) + ' KB') : 'Size unknown'}
         </p>
       </div>
     </motion.div>

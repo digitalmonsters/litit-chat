@@ -31,7 +31,7 @@ export default function AudioCallModal({
   const [calling, setCalling] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const phoneNumber = profile.metadata?.phone;
+  const phoneNumber = typeof profile.metadata?.phone === 'string' ? profile.metadata.phone : undefined;
   const audioCallEnabled = profile.metadata?.audioCallEnabled !== false;
 
   const handleCall = async () => {
@@ -121,19 +121,19 @@ export default function AudioCallModal({
                     {profile?.photoURL ? (
                       <img
                         src={profile.photoURL}
-                        alt={profile?.displayName || 'User'}
+                        alt={profile?.displayName ?? 'User'}
                         className="w-full h-full rounded-full object-cover"
                       />
                     ) : (
                       <span className="text-3xl font-bold text-white">
-                        {profile?.displayName ? profile.displayName.charAt(0).toUpperCase() : '?'}
+                        {profile?.displayName?.charAt(0)?.toUpperCase() ?? '?'}
                       </span>
                     )}
                   </div>
                   <h3 className="text-xl font-semibold text-white mb-2">
-                    {profile?.displayName || 'Unknown User'}
+                    {profile?.displayName ?? 'Unknown User'}
                   </h3>
-                  <p className="text-sm text-gray-400">{phoneNumber}</p>
+                  <p className="text-sm text-gray-400">{phoneNumber ?? ''}</p>
                 </div>
 
                 {/* Error Message */}
