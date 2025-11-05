@@ -1,3 +1,5 @@
+import type { Timestamp } from 'firebase/firestore';
+
 // ============================================================================
 // USERS COLLECTION
 // ============================================================================
@@ -17,6 +19,12 @@ export interface FirestoreUser {
   ghlContactId?: string; // GHL contact ID (backward compatibility)
   ghlLocationId?: string; // GHL location ID
   interests?: string[]; // User interests (from tags)
+  provider?: 'google' | 'apple' | 'facebook' | 'phone' | 'email' | 'anonymous';
+  verified?: boolean;
+  bio?: string;
+  location?: string | { address?: string; city?: string; country?: string };
+  trialStartDate?: Timestamp | Date | null;
+  trialEndDate?: Timestamp | Date | null;
 
   // Timestamps
   createdAt?: Timestamp;
@@ -69,6 +77,8 @@ export interface FirestoreMessage {
   timestamp?: Timestamp; // Alias for createdAt
   isEdited?: boolean; // Whether message has been edited
   senderName?: string; // Cached sender display name
+  senderAvatar?: string; // Cached sender avatar url
+  status?: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
   createdAt: Timestamp;
   updatedAt: Timestamp;
 
@@ -78,6 +88,7 @@ export interface FirestoreMessage {
     type: 'image' | 'video' | 'audio' | 'file';
     url: string;
     filename?: string;
+    name?: string; // alias used by UI
     size?: number;
     mimeType?: string;
   }>;
@@ -111,14 +122,37 @@ export interface FirestoreWallet {
 export interface FirestoreTransaction {
   id: string; // Document ID
   userId: string;
-  type: 'deposit' | 'withdrawal' | 'spend' | 'earn' | 'refund' | 'subscription' | 'topup' | 'call_cost' | 'message_unlock' | 'party_entry' | 'tip';
+  type: 'deposit' | 'withdrawal' | 'spend' | 'earn' | 'refund' | 'subscription' | 'topup' | 'call_cost' | 'message_unlock' | 'party_entry' | 'tip' | 'battle_tip' | 'liveparty_tip' | 'battle_reward' | 'call' | 'liveparty_viewer' | 'liveparty_entry';
   amount: number; // Amount in stars or USD cents
   currency: 'USD' | 'STARS';
   status: 'pending' | 'completed' | 'failed' | 'refunded';
   description?: string;
   relatedEntityId?: string; // e.g., paymentId, callId, messageId, livestreamId
+  callId?: string;
+  battleId?: string;
+  livepartyId?: string;
+  livePartyId?: string; // alias casing used in some routes
+  battleHostId?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  metadata?: Record<string, unknown>;
+}
+
+export interface CreateTransactionData {
+  userId: string;
+  type: FirestoreTransaction['type'];
+  amount: number;
+  currency: FirestoreTransaction['currency'];
+  description?: string;
+  callId?: string;
+  callDuration?: number;
+  battleId?: string;
+  battleHostId?: string;
+  livepartyId?: string;
+  livePartyId?: string; // alias casing used in some routes
+  livePartyEntryFee?: number;
+  livePartyViewerMinutes?: number;
+  relatedEntityId?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -332,4 +366,16 @@ export interface FirestoreBattle {
   metadata?: Record<string, unknown>;
 }
 
-// ... rest of existing code ...
+export interface CreateWalletData {
+  userId: string;
+  balance?: number;
+  stars?: number;
+}
+
+export interface UpdateWalletData {
+  userId: string;
+  starsDelta?: number;
+  usdDelta?: number;
+}
+
+export { CreateWalletData, UpdateWalletData };
