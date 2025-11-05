@@ -12,7 +12,7 @@ export interface FirestoreUser {
   photoURL?: string;
   audioCallEnabled?: boolean;
   stars: number; // User's star balance
-  tier: 'free' | 'basic' | 'premium' | 'enterprise' | 'litplus' | 'PRO' | 'VIP';
+  tier: 'free' | 'basic' | 'premium' | 'enterprise' | 'litplus';
   status?: 'online' | 'offline' | 'away' | 'busy';
   fcmToken?: string; // FCM token for push notifications
   ghlId?: string; // GHL contact ID
@@ -25,22 +25,6 @@ export interface FirestoreUser {
   location?: string | { address?: string; city?: string; country?: string };
   trialStartDate?: Timestamp | Date | null;
   trialEndDate?: Timestamp | Date | null;
-  stripeCustomerId?: string; // Stripe customer ID
-  stripeSubscriptionId?: string; // Stripe subscription ID
-  subscriptionStatus?: 'active' | 'canceled' | 'past_due' | 'trialing' | 'incomplete';
-  subscriptionEndDate?: Timestamp | Date | null;
-  
-  // AI Companion fields
-  isAI?: boolean; // Whether this is an AI companion user
-  aiPersonality?: 'fun' | 'flirty' | 'supportive' | 'creative'; // AI personality type
-
-  // Presence tracking
-  presence?: {
-    status: 'online' | 'offline' | 'away' | 'busy';
-    lastSeen: Timestamp | null;
-    isTyping?: boolean;
-    currentChat?: string;
-  };
 
   // Timestamps
   createdAt?: Timestamp;
@@ -66,11 +50,6 @@ export interface FirestoreChat {
   lastMessageId?: string; // ID of last message
   lastMessageAt?: Timestamp; // Timestamp of last message
   isGroup?: boolean; // Whether this is a group chat
-  typingUsers?: Array<{
-    userId: string;
-    userName: string;
-    timestamp: Timestamp;
-  }>; // Users currently typing
   createdAt: Timestamp;
   updatedAt: Timestamp;
 
@@ -100,7 +79,6 @@ export interface FirestoreMessage {
   senderName?: string; // Cached sender display name
   senderAvatar?: string; // Cached sender avatar url
   status?: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
-  readBy?: string[] | Record<string, Timestamp>; // Array of user IDs or map of userId -> read timestamp
   createdAt: Timestamp;
   updatedAt: Timestamp;
 
@@ -113,13 +91,6 @@ export interface FirestoreMessage {
     name?: string; // alias used by UI
     size?: number;
     mimeType?: string;
-    // Bunny Stream video metadata
-    guid?: string; // Bunny Stream video GUID
-    thumbnailUrl?: string; // Thumbnail URL
-    playbackUrl?: string; // HLS playback URL
-    mp4Url?: string; // MP4 fallback URL
-    encodeProgress?: number; // Encoding progress (0-100)
-    videoStatus?: 'processing' | 'ready' | 'error'; // Video processing status
   }>;
 
   // Metadata
@@ -296,13 +267,8 @@ export interface CreateMessageData {
     type: 'image' | 'video' | 'audio' | 'file';
     url: string;
     filename?: string;
-    name?: string;
     size?: number;
     mimeType?: string;
-    // Bunny Stream video metadata
-    guid?: string; // Bunny Stream video GUID
-    thumbnail?: string; // Thumbnail URL
-    thumbnailUrl?: string; // Alternative thumbnail field
   }>;
   metadata?: Record<string, unknown>;
 }
@@ -431,73 +397,28 @@ export interface UpdateWalletData {
 }
 
 // ============================================================================
-// VIDEOS COLLECTION (Bunny Stream)
+// FLAMES COLLECTION (24h Stories)
 // ============================================================================
 
-export interface FirestoreVideo {
-  id: string; // Document ID (same as Bunny Stream GUID)
-  guid: string; // Bunny Stream video GUID
-  chatId: string; // Chat this video belongs to
-  userId: string; // User who uploaded the video
-  title: string; // Video title
-  uploadedAt: string; // ISO timestamp
-  status: 'processing' | 'ready' | 'error'; // Processing status
-  fileSize: number; // File size in bytes
-  mimeType: string; // Original MIME type
+export interface FirestoreFlame {
+  id: string; // Document ID
+  userId: string; // User who posted the flame
+  mediaUrl: string; // Firebase Storage URL or Bunny CDN URL
+  mediaType: 'image' | 'video'; // Media type
+  caption?: string; // Optional caption
+  thumbnailUrl?: string; // Thumbnail URL (for videos)
   
-  // Bunny Stream URLs
-  playbackUrl: string; // HLS streaming URL
-  thumbnailUrl: string; // Thumbnail URL
-  previewUrl?: string; // Preview/poster URL
-  mp4Url?: string; // MP4 fallback URL
+  // Video metadata (if mediaType is 'video')
+  guid?: string; // Bunny Stream video GUID
+  duration?: number; // Video duration in seconds
   
-  // Video metadata (populated after encoding)
-  encodeProgress?: number; // 0-100
-  width?: number; // Video width
-  height?: number; // Video height
-  length?: number; // Duration in seconds
-  framerate?: number; // Frames per second
-  availableResolutions?: string; // Available quality options
-  views?: number; // View count
+  // View tracking
+  viewCount?: number; // Number of views
+  viewedBy?: string[]; // User IDs who viewed this flame
   
   // Timestamps
-  encodedAt?: string; // ISO timestamp when encoding completed
-  updatedAt?: string; // ISO timestamp
-  
-  // Error handling
-  error?: string; // Error message if status is 'error'
-  
-  // Metadata
-  metadata?: Record<string, unknown>;
-}
-
-// ============================================================================
-// LIKES COLLECTION
-// ============================================================================
-
-export interface FirestoreLike {
-  id: string; // Document ID (composite: userId_targetUserId)
-  userId: string; // User who liked
-  targetUserId: string; // User being liked
-  type: 'like' | 'pass'; // Action type
   createdAt: Timestamp;
-  
-  // Optional metadata
-  metadata?: Record<string, unknown>;
-}
-
-// ============================================================================
-// MATCHES COLLECTION
-// ============================================================================
-
-export interface FirestoreMatch {
-  id: string; // Document ID
-  userIds: [string, string]; // Array of two matched user IDs (sorted alphabetically)
-  chatId?: string; // Chat ID if conversation started
-  status: 'active' | 'unmatched'; // Match status
-  createdAt: Timestamp;
-  unmatchedAt?: Timestamp;
-  unmatchedBy?: string; // User ID who unmatched
+  expiresAt: Timestamp; // Auto-expires after 24h
   
   // Optional metadata
   metadata?: Record<string, unknown>;

@@ -106,6 +106,7 @@ export const joinAnimation: Variants = {
   },
 };
 
+
 /**
  * Match celebration animation
  */
@@ -190,7 +191,7 @@ export const swipeCard: Variants = {
 /**
  * Flame hearts burst (for match)
  */
-export const flameHeartsBurst = (count: number = 20) => {
+export function flameHeartsBurst(count: number = 20) {
   return Array.from({ length: count }, (_, i) => ({
     initial: {
       opacity: 0,
@@ -210,5 +211,4 @@ export const flameHeartsBurst = (count: number = 20) => {
       },
     },
   }));
-};
-
+}

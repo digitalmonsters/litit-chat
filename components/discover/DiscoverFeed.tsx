@@ -11,6 +11,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { collection, query, where, orderBy, limit, onSnapshot, Timestamp } from 'firebase/firestore';
 import { getFirestoreInstance, COLLECTIONS } from '@/lib/firebase';
+import DiscoverGrid from './DiscoverGrid';
 import UserCard from './UserCard';
 import ProfileModal from './ProfileModal';
 import SwipeableCardStack from './SwipeableCardStack';
