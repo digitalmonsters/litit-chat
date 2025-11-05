@@ -54,24 +54,20 @@ function userToGHLContact(user: FirestoreUser, locationId: string): GHLContact {
   const firstName = nameParts[0] || '';
   const lastName = nameParts.slice(1).join(' ') || '';
 
-  // Build address from location
-  let address1 = '';
-  let city = '';
-  let state = '';
-  let country = '';
-  let postalCode = '';
-
-  if (user.location) {
-    address1 = user.location.address || '';
-    city = user.location.city || '';
-    country = user.location.country || '';
-  }
+  // Build address from location with safe guards
+  const loc =
+    typeof user.location === 'string'
+      ? { address: user.location, city: '', country: '' }
+      : user.location ?? {};
+  const address1 = loc.address ?? '';
+  const city = loc.city ?? '';
+  const country = loc.country ?? '';
 
   const contact: GHLContact = {
     firstName,
     lastName,
-    email: user.email,
-    phone: typeof user.metadata?.phone === 'string' ? user.metadata.phone : undefined,
+    email: user.email ?? undefined,
+    phone: user.phone ?? (typeof user.metadata?.phone === 'string' ? user.metadata.phone : undefined),
     address1,
     city,
     country,
