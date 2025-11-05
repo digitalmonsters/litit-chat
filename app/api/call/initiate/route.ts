@@ -4,6 +4,7 @@ import { getFirestoreInstance, COLLECTIONS } from '@/lib/firebase';
 import { doc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import type { FirestoreCall } from '@/lib/firestore-collections';
 import { getAuthenticatedUserId } from '@/lib/auth-server';
+import { checkCallBalance, DEFAULT_RATE_PER_MINUTE_STARS } from '@/lib/call-billing';
 
 /**
  * POST /api/call/initiate
@@ -64,6 +65,20 @@ export async function POST(request: NextRequest) {
 
     const firestore = getFirestoreInstance();
 
+    // Check if user has sufficient balance for call
+    const balanceCheck = await checkCallBalance(userId);
+    if (!balanceCheck.canAfford) {
+      return NextResponse.json(
+        {
+          error: 'Insufficient balance',
+          balance: balanceCheck.balance,
+          estimatedCost: balanceCheck.estimatedCost,
+          message: `You need at least ${balanceCheck.estimatedCost} stars for a 30-minute call. Your balance: ${balanceCheck.balance} stars`,
+        },
+        { status: 402 } // Payment Required
+      );
+    }
+
     // Create room name
     const roomName = type === 'direct' 
       ? `call-${userId}-${receiverId}`
@@ -105,6 +120,8 @@ export async function POST(request: NextRequest) {
       sipEnabled: type === 'sip',
       sipPhoneNumber: type === 'sip' ? sipPhoneNumber : undefined,
       status: 'initiated',
+      ratePerMinute: DEFAULT_RATE_PER_MINUTE_STARS,
+      paymentStatus: 'pending',
       createdAt: serverTimestamp() as Timestamp,
       updatedAt: serverTimestamp() as Timestamp,
     };

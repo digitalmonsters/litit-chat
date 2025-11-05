@@ -95,13 +95,13 @@ export default function UserCard({ user, onClick, className }: UserCardProps) {
         {user.photoURL ? (
           <img
             src={user.photoURL}
-            alt={user.displayName || 'User'}
+            alt={user.displayName}
             className="w-full h-full object-cover"
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-[#FF5E3A] to-[#FF9E57] flex items-center justify-center">
             <span className="text-4xl font-bold text-white">
-              {user.displayName?.charAt(0).toUpperCase() || '?'}
+              {user.displayName?.charAt(0)?.toUpperCase() ?? '?'}
             </span>
           </div>
         )}
@@ -131,41 +131,49 @@ export default function UserCard({ user, onClick, className }: UserCardProps) {
 
       {/* User info */}
       <div className="p-4">
-        <h3 className="font-semibold text-white truncate mb-1">
-          {user.displayName}
-        </h3>
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="font-semibold text-white truncate flex-1">
+            {user.displayName}
+          </h3>
+          {isOnline && (
+            <span className="flex items-center gap-1 text-xs text-green-500 font-medium">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              Online
+            </span>
+          )}
+        </div>
         
+        {/* Location with distance - more prominent */}
+        {(typeof user.location === 'string' ? user.location : user.location?.city) && (
+          <div className="flex items-center gap-1.5 text-sm text-gray-300 mb-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span className="font-semibold">{typeof user.location === 'string' ? user.location : user.location?.city}</span>
+          </div>
+        )}
+
         {user.bio && (
           <p className="text-sm text-gray-400 line-clamp-2 mb-2">
             {user.bio}
           </p>
         )}
 
-        {/* Location */}
-        {typeof user.location === 'object' && user.location?.city && (
-          <div className="flex items-center gap-1 text-xs text-gray-500">
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <span>{(user.location as { city: string }).city}</span>
-          </div>
-        )}
-
-        {/* Interests preview */}
+        {/* Interests - more prominent */}
         {user.interests && user.interests.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2">
-            {user.interests.slice(0, 2).map((interest) => (
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {user.interests.slice(0, 3).map((interest) => (
               <span
                 key={interest}
-                className="px-2 py-0.5 bg-gray-800 text-xs text-gray-300 rounded-full"
+                className="px-2.5 py-1 bg-gradient-to-r from-[#FF5E3A]/10 to-[#FF9E57]/10 border border-[#FF5E3A]/30 text-xs text-[#FF9E57] font-medium rounded-full"
               >
                 {interest}
               </span>
             ))}
-            {user.interests.length > 2 && (
-              <span className="px-2 py-0.5 text-xs text-gray-500">
-                +{user.interests.length - 2}
+            {user.interests.length > 3 && (
+              <span className="px-2.5 py-1 bg-gray-800/50 text-xs text-gray-400 font-medium rounded-full">
+                +{user.interests.length - 3} more
               </span>
             )}
           </div>

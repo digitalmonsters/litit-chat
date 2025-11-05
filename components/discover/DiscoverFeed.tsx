@@ -18,6 +18,7 @@ import SwipeableCardStack from './SwipeableCardStack';
 import type { FirestoreUser } from '@/lib/firestore-collections';
 import { flameFadeIn } from '@/lib/flame-transitions';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 type TabType = 'recent' | 'online' | 'popular';
 
@@ -28,6 +29,7 @@ const tabs: Array<{ id: TabType; label: string }> = [
 ];
 
 export default function DiscoverFeed() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('recent');
   const [users, setUsers] = useState<FirestoreUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -122,8 +124,26 @@ export default function DiscoverFeed() {
 
   return (
     <div className="h-full flex flex-col bg-[#1E1E1E]">
-      {/* Tabs */}
+      {/* Header with Match button */}
       <div className="sticky top-0 z-10 bg-[#1E1E1E] border-b border-gray-800">
+        <div className="flex items-center justify-between px-4 py-3">
+          <h1 className="text-xl font-bold bg-gradient-to-r from-[#FF5E3A] to-[#FF9E57] bg-clip-text text-transparent">
+            Discover
+          </h1>
+          <motion.button
+            onClick={() => router.push('/match')}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="px-4 py-2 bg-gradient-to-r from-[#FF5E3A] to-[#FF9E57] text-white font-semibold rounded-xl shadow-lg hover:shadow-[#FF5E3A]/50 transition-all flex items-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+            </svg>
+            Match
+          </motion.button>
+        </div>
+        
+        {/* Tabs */}
         <div className="flex overflow-x-auto scrollbar-hide">
           {tabs.map((tab) => (
             <button

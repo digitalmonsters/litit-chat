@@ -32,6 +32,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  env: {
+    NEXT_PUBLIC_SNAP_API_TOKEN: process.env.SNAP_API_TOKEN_STAGING || '',
+    NEXT_PUBLIC_SNAP_LENS_GROUP: process.env.SNAP_LENS_GROUP || '',
+  },
   // Turbopack configuration
   turbopack: {},
   // Webpack fallback for PWA (only used if Turbopack disabled)

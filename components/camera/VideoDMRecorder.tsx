@@ -11,7 +11,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { flameFadeIn, flameGlow } from '@/lib/flame-transitions';
-import { uploadChatImage } from '@/lib/storage';
+import { uploadChatVideo, checkVideoStatus } from '@/lib/storage';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface VideoDMRecorderProps {
@@ -143,17 +143,17 @@ export default function VideoDMRecorder({
     setError(null);
 
     try {
-      // Upload to Firebase Storage
+      // Upload to Bunny Stream via API
       const file = new File([recordingBlob], `dm-${Date.now()}.webm`, {
         type: 'video/webm',
       });
 
-      // Note: uploadChatImage is for images, we'll need to create uploadChatVideo
-      // For now, using a placeholder
-      const videoUrl = await uploadChatImage(chatId, file);
-      // TODO: Replace with actual video upload function
+      // Upload video to Bunny Stream for transcoding
+      const result = await uploadChatVideo(chatId, file, user.id);
 
-      onRecordingComplete?.(videoUrl);
+      // Return playback URL (HLS streaming for adaptive bitrate)
+      // The URL will be used by VideoPlayer component which supports HLS
+      onRecordingComplete?.(result.urls.playbackUrl);
       onClose?.();
     } catch (err) {
       // eslint-disable-next-line no-console
