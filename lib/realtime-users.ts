@@ -48,26 +48,30 @@ export function useUsersPresence(options: UseUsersPresenceOptions = {}) {
     if (filter === 'online') {
       // Online users (lastSeen within 5 minutes)
       const fiveMinutesAgo = Timestamp.fromMillis(Date.now() - 5 * 60 * 1000);
-      const conditions = [
-        where('lastSeen', '>=', fiveMinutesAgo),
-        orderBy('lastSeen', 'desc'),
-      ];
+      const conditions: any[] = [];
       
       if (verifiedOnly) {
-        conditions.unshift(where('verified', '==', true));
+        conditions.push(where('verified', '==', true));
       }
       
-      conditions.push(limit(limitCount));
+      conditions.push(
+        where('lastSeen', '>=', fiveMinutesAgo),
+        orderBy('lastSeen', 'desc'),
+        limit(limitCount)
+      );
       q = query(usersRef, ...conditions);
     } else if (filter === 'recent') {
       // Recently joined users
-      const conditions = [orderBy('createdAt', 'desc')];
+      const conditions: any[] = [];
       
       if (verifiedOnly) {
-        conditions.unshift(where('verified', '==', true));
+        conditions.push(where('verified', '==', true));
       }
       
-      conditions.push(limit(limitCount));
+      conditions.push(
+        orderBy('createdAt', 'desc'),
+        limit(limitCount)
+      );
       q = query(usersRef, ...conditions);
     } else {
       // All users

@@ -83,7 +83,11 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
           setIsOnline(userData.status === 'online');
           
           if (userData.lastSeen) {
-            const lastSeenDate = userData.lastSeen.toDate ? userData.lastSeen.toDate() : new Date(userData.lastSeen);
+            const lastSeenDate = userData.lastSeen.toDate 
+              ? userData.lastSeen.toDate() 
+              : userData.lastSeen instanceof Date 
+                ? userData.lastSeen 
+                : new Date();
             setLastSeen(lastSeenDate);
           }
         }

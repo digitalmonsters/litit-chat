@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import type { FirestoreMessage } from '@/lib/firestore-collections';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
-import { flameStagger, flameStaggerItem, messageSendSpring } from '@/lib/flame-transitions';
+import { flameStagger, flameStaggerItem, messageSendSpring, messageReceiveSpring } from '@/lib/flame-transitions';
 
 export interface MessageListProps {
   messages: FirestoreMessage[];
@@ -71,15 +71,10 @@ export default function MessageList({
               <motion.div
                 key={message.id}
                 layout
-                initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.8, y: -20 }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 500,
-                  damping: 30,
-                  mass: 0.5,
-                }}
+                variants={isOwn ? messageSendSpring : messageReceiveSpring}
+                initial="initial"
+                animate="animate"
+                exit="exit"
               >
                 <MessageBubble
                   message={message}

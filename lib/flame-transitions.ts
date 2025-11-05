@@ -224,18 +224,44 @@ export const pageTransition = {
 };
 
 /**
- * Spring animation for message send
+ * Spring animation for message send (own messages)
  */
 export const messageSendSpring: Variants = {
   initial: {
     opacity: 0,
     scale: 0.8,
-    y: 20,
+    x: 20,
+    filter: 'blur(4px)',
   },
   animate: {
     opacity: 1,
     scale: 1,
-    y: 0,
+    x: 0,
+    filter: 'blur(0px)',
+    transition: {
+      type: 'spring',
+      stiffness: 500,
+      damping: 30,
+      mass: 0.5,
+    },
+  },
+};
+
+/**
+ * Spring animation for message receive (other users' messages)
+ */
+export const messageReceiveSpring: Variants = {
+  initial: {
+    opacity: 0,
+    scale: 0.8,
+    x: -20,
+    filter: 'blur(4px)',
+  },
+  animate: {
+    opacity: 1,
+    scale: 1,
+    x: 0,
+    filter: 'blur(0px)',
     transition: {
       type: 'spring',
       stiffness: 500,

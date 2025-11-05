@@ -228,8 +228,8 @@ export default function Conversation({ chatId, className }: ConversationProps) {
               return {
                 ...msg,
                 readBy: {
-                  ...(typeof msg.readBy === 'object' && !Array.isArray(msg.readBy)
-                    ? msg.readBy
+                  ...(typeof (msg as any).readBy === 'object' && !Array.isArray((msg as any).readBy)
+                    ? (msg as any).readBy
                     : {}),
                   [data.readBy]: new Date(data.timestamp),
                 },
@@ -256,7 +256,7 @@ export default function Conversation({ chatId, className }: ConversationProps) {
     const unreadMessages = messages.filter((msg) => {
       if (msg.senderId === user.uid) return false; // Skip own messages
       
-      const readBy = msg.readBy;
+      const readBy = (msg as any).readBy;
       if (!readBy) return true;
       
       if (Array.isArray(readBy)) {

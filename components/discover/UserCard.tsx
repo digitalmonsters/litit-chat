@@ -97,7 +97,7 @@ export default function UserCard({ user, onClick, className }: UserCardProps) {
         {user.photoURL ? (
           <Image
             src={getOptimizedImageSrc(user.photoURL, { width: 400, height: 400, quality: 85 })}
-            alt={user.displayName}
+            alt={user.displayName || user.email || 'User'}
             fill
             className="object-cover"
             loading="lazy"

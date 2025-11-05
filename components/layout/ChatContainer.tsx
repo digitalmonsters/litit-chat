@@ -119,7 +119,13 @@ export default function ChatContainer({
   return (
     <div
       className={cn(
-        'flex h-screen w-full overflow-hidden bg-[#1E1E1E]',
+        'grid h-screen w-full overflow-hidden bg-[#1E1E1E]',
+        // Mobile: single column, sidebar overlay
+        'grid-cols-1',
+        // Tablet: sidebar + chat (320px sidebar)
+        'md:grid-cols-[320px_1fr]',
+        // Desktop: sidebar + chat (360px sidebar)
+        'lg:grid-cols-[360px_1fr]',
         className
       )}
     >
@@ -129,7 +135,7 @@ export default function ChatContainer({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -137,16 +143,17 @@ export default function ChatContainer({
       {/* Sidebar */}
       <AnimatePresence>
         {(showSidebar || sidebarOpen) && (
-          <motion.div
+          <motion.aside
             variants={sidebarVariants}
             initial={isMobile ? 'closed' : 'open'}
             animate={sidebarOpen ? 'open' : 'closed'}
             exit="closed"
             className={cn(
               'flex-shrink-0 border-r border-zinc-800/50 bg-[#1E1E1E]',
+              // Mobile: fixed overlay
               isMobile
-                ? 'fixed inset-y-0 left-0 z-50 w-80'
-                : 'relative w-80'
+                ? 'fixed inset-y-0 left-0 z-50 w-80 md:hidden'
+                : 'relative hidden md:block'
             )}
           >
             <Sidebar
@@ -155,13 +162,13 @@ export default function ChatContainer({
               onRoomSelect={handleRoomSelect}
               onNewChat={onNewChat}
             />
-          </motion.div>
+          </motion.aside>
         )}
       </AnimatePresence>
 
       {/* Main Chat Area */}
-      <motion.div
-        className="flex flex-1 flex-col overflow-hidden"
+      <motion.main
+        className="flex flex-1 flex-col overflow-hidden col-span-1"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
@@ -248,7 +255,7 @@ export default function ChatContainer({
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.div>
+      </motion.main>
     </div>
   );
 }

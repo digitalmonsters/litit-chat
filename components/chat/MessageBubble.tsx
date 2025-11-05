@@ -153,7 +153,7 @@ export default function MessageBubble({
                   <div key={idx} className="relative w-full max-w-full rounded-lg overflow-hidden">
                     <Image
                       src={getOptimizedImageSrc(att.url, { width: 800, height: 600, quality: 85 })}
-                      alt={att.name}
+                      alt={att.name || att.filename || 'Image attachment'}
                       width={800}
                       height={600}
                       className="max-w-full h-auto rounded-lg"
