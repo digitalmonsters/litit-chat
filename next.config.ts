@@ -30,7 +30,18 @@ const nextConfig: NextConfig = {
         hostname: 'firebasestorage.googleapis.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: '*.b-cdn.net',
+      },
+      {
+        protocol: 'https',
+        hostname: 'bunnycdn.com',
+      },
     ],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    formats: ['image/webp'],
   },
   env: {
     NEXT_PUBLIC_SNAP_API_TOKEN: process.env.SNAP_API_TOKEN_STAGING || '',

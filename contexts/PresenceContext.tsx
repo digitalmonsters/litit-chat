@@ -1,153 +1,165 @@
 'use client';
 
-/**
- * Presence Context
- * 
- * Tracks user online/offline status and lastSeen
- * Maintains real-time presence updates via Firestore
- */
-
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { doc, onSnapshot, updateDoc, serverTimestamp, Unsubscribe } from 'firebase/firestore';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import {
+  collection,
+  doc,
+  onSnapshot,
+  updateDoc,
+  serverTimestamp,
+  Timestamp,
+} from 'firebase/firestore';
 import { getFirestoreInstance, COLLECTIONS } from '@/lib/firebase';
-import { useAuth } from './AuthContext';
-import type { FirestoreUser } from '@/lib/firestore-collections';
+import { useAuth } from '@/contexts/AuthContext';
+
+export interface UserPresence {
+  id: string;
+  status: 'online' | 'offline' | 'away' | 'busy';
+  lastSeen: Timestamp | null;
+  isTyping?: boolean;
+  currentChat?: string;
+}
 
 interface PresenceContextType {
-  isOnline: boolean;
-  lastSeen: Date | null;
-  updatePresence: () => Promise<void>;
-  setStatus: (status: 'online' | 'offline' | 'away' | 'busy') => Promise<void>;
+  presenceMap: Map<string, UserPresence>;
+  setUserStatus: (status: UserPresence['status']) => Promise<void>;
+  setTypingStatus: (chatId: string, isTyping: boolean) => Promise<void>;
+  getUserPresence: (userId: string) => UserPresence | undefined;
+  isUserOnline: (userId: string) => boolean;
 }
 
 const PresenceContext = createContext<PresenceContextType | undefined>(undefined);
 
 export function PresenceProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const [isOnline, setIsOnline] = useState(false);
-  const [lastSeen, setLastSeen] = useState<Date | null>(null);
-  const [presenceUnsubscribe, setPresenceUnsubscribe] = useState<Unsubscribe | null>(null);
+  const [presenceMap, setPresenceMap] = useState<Map<string, UserPresence>>(new Map());
 
-  // Update presence status in Firestore
-  const updatePresence = useCallback(async () => {
-    if (!user?.uid) return;
-
-    try {
-      const db = getFirestoreInstance();
-      const userRef = doc(db, COLLECTIONS.USERS, user.uid);
-
-      await updateDoc(userRef, {
-        status: 'online',
-        lastSeen: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-    } catch (error) {
-      console.error('Error updating presence:', error);
-    }
-  }, [user?.uid]);
-
-  // Set custom status
-  const setStatus = useCallback(async (status: 'online' | 'offline' | 'away' | 'busy') => {
-    if (!user?.uid) return;
-
-    try {
-      const db = getFirestoreInstance();
-      const userRef = doc(db, COLLECTIONS.USERS, user.uid);
-
-      await updateDoc(userRef, {
-        status,
-        lastSeen: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-    } catch (error) {
-      console.error('Error setting status:', error);
-    }
-  }, [user?.uid]);
-
-  // Listen to current user's presence data
+  // Listen to all users' presence
   useEffect(() => {
-    if (!user?.uid) {
-      setIsOnline(false);
-      setLastSeen(null);
-      return;
-    }
+    if (!user) return;
 
     const db = getFirestoreInstance();
-    const userRef = doc(db, COLLECTIONS.USERS, user.uid);
+    const usersRef = collection(db, COLLECTIONS.USERS);
 
-    const unsubscribe = onSnapshot(
-      userRef,
-      (snapshot) => {
-        if (snapshot.exists()) {
-          const userData = snapshot.data() as FirestoreUser;
-          setIsOnline(userData.status === 'online');
-          
-          if (userData.lastSeen) {
-            const lastSeenDate = userData.lastSeen.toDate 
-              ? userData.lastSeen.toDate() 
-              : userData.lastSeen instanceof Date 
-                ? userData.lastSeen 
-                : new Date();
-            setLastSeen(lastSeenDate);
-          }
+    const unsubscribe = onSnapshot(usersRef, (snapshot) => {
+      const newPresenceMap = new Map<string, UserPresence>();
+
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.presence) {
+          newPresenceMap.set(doc.id, {
+            id: doc.id,
+            status: data.presence.status || 'offline',
+            lastSeen: data.presence.lastSeen || null,
+            isTyping: data.presence.isTyping || false,
+            currentChat: data.presence.currentChat || '',
+          });
         }
-      },
-      (error) => {
-        console.error('Error listening to presence:', error);
-      }
-    );
+      });
 
-    setPresenceUnsubscribe(() => unsubscribe);
+      setPresenceMap(newPresenceMap);
+    });
+
     return () => unsubscribe();
-  }, [user?.uid]);
+  }, [user]);
 
-  // Set online status on mount and update periodically
+  // Update current user's presence on mount and activity
   useEffect(() => {
-    if (!user?.uid) return;
+    if (!user) return;
 
-    const userId = user.uid; // Capture uid for cleanup
+    const updatePresence = async (status: UserPresence['status']) => {
+      try {
+        const db = getFirestoreInstance();
+        const userRef = doc(db, COLLECTIONS.USERS, user.uid);
 
-    // Set online immediately
-    updatePresence();
-
-    // Update presence every 30 seconds
-    const interval = setInterval(() => {
-      updatePresence();
-    }, 30000);
-
-    // Set offline when leaving
-    const handleBeforeUnload = () => {
-      setStatus('offline');
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        setStatus('away');
-      } else {
-        updatePresence();
+        await updateDoc(userRef, {
+          'presence.status': status,
+          'presence.lastSeen': serverTimestamp(),
+        });
+      } catch (error) {
+        console.error('Error updating presence:', error);
       }
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    // Set online on mount
+    updatePresence('online');
+
+    // Set offline on unmount
+    return () => {
+      updatePresence('offline');
+    };
+  }, [user]);
+
+  // Handle visibility change
+  useEffect(() => {
+    if (!user) return;
+
+    const handleVisibilityChange = async () => {
+      const status = document.hidden ? 'away' : 'online';
+      await setUserStatus(status);
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      clearInterval(interval);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      
-      // Set offline on cleanup
-      setStatus('offline').catch(console.error);
     };
-  }, [user?.uid, updatePresence, setStatus]);
+  }, [user]);
+
+  // Set user status
+  const setUserStatus = async (status: UserPresence['status']) => {
+    if (!user) return;
+
+    try {
+      const db = getFirestoreInstance();
+      const userRef = doc(db, COLLECTIONS.USERS, user.uid);
+
+      await updateDoc(userRef, {
+        'presence.status': status,
+        'presence.lastSeen': serverTimestamp(),
+      });
+    } catch (error) {
+      console.error('Error setting user status:', error);
+    }
+  };
+
+  // Set typing status
+  const setTypingStatus = async (chatId: string, isTyping: boolean) => {
+    if (!user) return;
+
+    try {
+      const db = getFirestoreInstance();
+      const userRef = doc(db, COLLECTIONS.USERS, user.uid);
+
+      await updateDoc(userRef, {
+        'presence.isTyping': isTyping,
+        'presence.currentChat': isTyping ? chatId : '',
+        'presence.lastSeen': serverTimestamp(),
+      });
+    } catch (error) {
+      console.error('Error setting typing status:', error);
+    }
+  };
+
+  // Get user presence
+  const getUserPresence = (userId: string): UserPresence | undefined => {
+    return presenceMap.get(userId);
+  };
+
+  // Check if user is online
+  const isUserOnline = (userId: string): boolean => {
+    const presence = presenceMap.get(userId);
+    return presence?.status === 'online';
+  };
 
   return (
     <PresenceContext.Provider
       value={{
-        isOnline,
-        lastSeen,
-        updatePresence,
-        setStatus,
+        presenceMap,
+        setUserStatus,
+        setTypingStatus,
+        getUserPresence,
+        isUserOnline,
       }}
     >
       {children}
@@ -162,4 +174,3 @@ export function usePresence() {
   }
   return context;
 }
-
