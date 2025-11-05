@@ -1,67 +1,85 @@
-# Firestore Setup Scripts
+# Git Workflow Scripts
 
-## Prerequisites
-
-Install required dependencies:
-```bash
-npm install -D tsx firebase-admin dotenv
-```
-
-Or if using ts-node:
-```bash
-npm install -D ts-node firebase-admin dotenv
-```
-
-## Environment Setup
-
-1. Get Firebase Service Account Key:
-   - Go to Firebase Console > Project Settings > Service Accounts
-   - Click "Generate new private key"
-   - Copy the JSON content
-
-2. Add to `.env.local`:
-```env
-FIREBASE_SERVICE_ACCOUNT='{"type":"service_account",...}'
-```
+Quick reference for Git workflow automation scripts.
 
 ## Scripts
 
-### 1. Seed Firestore Data
+### `git-workflow.sh` - Main Helper
 
-Seeds initial test data:
-- Two users (Alice and Bob)
-- One active call
-- One livestream battle
-- Wallets and transactions
+Quick shortcuts for common operations:
 
 ```bash
-npx tsx scripts/seed-firestore.ts
+# Create branches
+./scripts/git-workflow.sh feature new-feature
+./scripts/git-workflow.sh fix bug-name
+./scripts/git-workflow.sh hotfix critical-fix
+
+# Merge branches
+./scripts/git-workflow.sh merge-dev feature/new-feature "Summary"
+./scripts/git-workflow.sh merge-staging "Summary"
+./scripts/git-workflow.sh merge-main "Summary"
+
+# Cleanup
+./scripts/git-workflow.sh cleanup
+./scripts/git-workflow.sh cleanup feature/old-feature
 ```
 
-### 2. Verify Data Model
+### `git-merge.sh` - Merge Handler
 
-Verifies that Firestore collections match `docs/DATA_MODEL.MD`:
+Handles merge between any two branches with validation:
 
 ```bash
-npx tsx scripts/verify-data-model.ts
+./scripts/git-merge.sh <source> <target> [summary]
 ```
 
-## Deployment
+Examples:
+```bash
+./scripts/git-merge.sh develop staging "Monetization milestone"
+./scripts/git-merge.sh staging main "Production release v1.0"
+./scripts/git-merge.sh feature/new-feature develop "Add new feature"
+```
 
-### Deploy Security Rules
+Features:
+- ✅ Validates merge flow rules
+- ✅ Pulls latest changes
+- ✅ Uses `--no-ff` for merge commits
+- ✅ Formats commit messages
+- ✅ Pushes to remote
+
+### `git-cleanup.sh` - Branch Cleanup
+
+Removes merged feature/fix/hotfix branches:
 
 ```bash
-firebase deploy --only firestore:rules
+# Clean up specific branch
+./scripts/git-cleanup.sh feature/old-feature
+
+# Find and clean up all merged branches
+./scripts/git-cleanup.sh
 ```
 
-### Deploy Indexes
+## Workflow
 
-```bash
-firebase deploy --only firestore:indexes
+```
+1. Create feature branch
+   → ./scripts/git-workflow.sh feature monetization
+
+2. Develop and commit
+   → git add . && git commit -m "Implement wallet logic"
+
+3. Merge to develop (after testing)
+   → ./scripts/git-workflow.sh merge-dev feature/monetization "Wallet integration"
+
+4. Merge to staging (after internal testing)
+   → ./scripts/git-workflow.sh merge-staging "Monetization milestone"
+
+5. Merge to main (after QA)
+   → ./scripts/git-workflow.sh merge-main "Release v1.0"
+
+6. Clean up merged branches
+   → ./scripts/git-workflow.sh cleanup
 ```
 
-Or deploy both:
-```bash
-firebase deploy --only firestore
-```
+## See Also
 
+- Full documentation: [`docs/GIT_WORKFLOW.md`](../docs/GIT_WORKFLOW.md)

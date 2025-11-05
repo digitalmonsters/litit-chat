@@ -17,7 +17,7 @@ import type { FirestoreUser } from '@/lib/firestore-collections';
 export interface AudioCallModalProps {
   isOpen: boolean;
   onClose: () => void;
-  profile: FirestoreUser;
+  profile: FirestoreUser | null;
   className?: string;
 }
 
@@ -31,11 +31,16 @@ export default function AudioCallModal({
   const [calling, setCalling] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const phoneNumber = profile.metadata?.phone;
+  // Early return if no profile
+  if (!profile) {
+    return null;
+  }
+
+  const phoneNumber = typeof profile.metadata?.phone === 'string' ? profile.metadata.phone : undefined;
   const audioCallEnabled = profile.metadata?.audioCallEnabled !== false;
 
   const handleCall = async () => {
-    if (!phoneNumber || !user) return;
+    if (!phoneNumber || !user || !profile) return;
 
     setCalling(true);
     setError(null);
@@ -121,17 +126,17 @@ export default function AudioCallModal({
                     {profile.photoURL ? (
                       <img
                         src={profile.photoURL}
-                        alt={profile.displayName}
+                        alt={profile.displayName || 'Profile'}
                         className="w-full h-full rounded-full object-cover"
                       />
                     ) : (
                       <span className="text-3xl font-bold text-white">
-                        {profile.displayName.charAt(0).toUpperCase()}
+                        {profile.displayName?.charAt(0).toUpperCase() || '?'}
                       </span>
                     )}
                   </div>
                   <h3 className="text-xl font-semibold text-white mb-2">
-                    {profile.displayName}
+                    {profile.displayName || 'User'}
                   </h3>
                   <p className="text-sm text-gray-400">{phoneNumber}</p>
                 </div>
@@ -176,7 +181,7 @@ export default function AudioCallModal({
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                         </svg>
-                        <span>Call {profile.displayName}</span>
+                        <span>Call {profile.displayName || 'User'}</span>
                       </>
                     )}
                   </motion.button>
