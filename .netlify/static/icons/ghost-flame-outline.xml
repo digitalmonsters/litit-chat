@@ -1,0 +1,26 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 512 512"
+  fill="none"
+>
+  <!-- Outer Ghost-Flame Shape -->
+  <path
+    d="M256 16c-55 42-72 109-70 150 2 41 26 74 26 74s-28-8-52-30c-32 48-18 114 25 152 52 46 144 42 192-8 48-50 54-136 12-184-14 15-40 27-40 27s24-36 23-74C370 60 316 18 256 16z"
+    stroke="#F6F5F3"
+    stroke-width="8"
+    stroke-linejoin="round"
+  />
+
+  <!-- Ghost Eyes -->
+  <circle cx="215" cy="250" r="18" stroke="#F6F5F3" stroke-width="6" />
+  <circle cx="297" cy="250" r="18" stroke="#F6F5F3" stroke-width="6" />
+
+  <!-- Ghost Base Waves -->
+  <path
+    d="M160 400c30 24 60 28 96 0 36 28 66 24 96 0"
+    stroke="#F6F5F3"
+    stroke-width="6"
+    stroke-linecap="round"
+    opacity="0.8"
+  />
+</svg>
