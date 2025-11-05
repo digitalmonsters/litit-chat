@@ -42,7 +42,7 @@ async function createUserDocument(user: admin.auth.UserRecord): Promise<void> {
     id: uid,
     email: email || '',
     displayName: displayName || email?.split('@')[0] || 'User',
-    photoURL: photoURL || null,
+    photoURL: photoURL || undefined,
     phone: phoneNumber || null,
     status: 'offline',
     audioCallEnabled: true,

@@ -40,7 +40,7 @@ export type AuthProvider = 'google' | 'apple' | 'facebook' | 'phone' | 'email';
 /**
  * Get provider name from User object
  */
-function getProviderFromUser(user: User): FirestoreUser['provider'] {
+function getProviderFromUser(user: User): string {
   if (user.providerData.length === 0) return 'anonymous';
   
   const providerId = user.providerData[0]?.providerId || '';

@@ -164,7 +164,7 @@ export default function ProfileModal({
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <span className="text-6xl font-bold text-white/20">
-                      {user.displayName.charAt(0).toUpperCase()}
+                      {user.displayName?.charAt(0).toUpperCase() || '?'}
                     </span>
                   </div>
                 )}
@@ -211,8 +211,10 @@ export default function ProfileModal({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                     <span>
-                      {user.location.address || 
-                       `${user.location.city || ''}${user.location.city && user.location.country ? ', ' : ''}${user.location.country || ''}`}
+                      {typeof user.location === 'object' && user.location ?
+                        (user.location.address ||
+                         `${user.location.city || ''}${user.location.city && user.location.country ? ', ' : ''}${user.location.country || ''}`) :
+                        (typeof user.location === 'string' ? user.location : '')}
                     </span>
                   </motion.div>
                 )}

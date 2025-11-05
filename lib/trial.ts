@@ -107,8 +107,8 @@ export async function recordTrialCallUsage(
 
   const userData = userSnap.data() as FirestoreUser;
   const callMinutes = callDurationSeconds / 60;
-  const currentMinutesUsed = userData.metadata?.callTrialMinutesUsed || 0;
-  const currentCallsUsed = userData.metadata?.callTrialCallsUsed || 0;
+  const currentMinutesUsed = (userData.metadata?.callTrialMinutesUsed as number) || 0;
+  const currentCallsUsed = (userData.metadata?.callTrialCallsUsed as number) || 0;
 
   await updateDoc(userRef, {
     updatedAt: serverTimestamp(),

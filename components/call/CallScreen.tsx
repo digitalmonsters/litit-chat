@@ -65,8 +65,9 @@ export default function CallScreen({
     // Initialize 100ms SDK with roomId from call document
     const initialize100ms = async () => {
       try {
-        // Dynamically import 100ms SDK
-        const HMS = await import('@100mslive/react-sdk');
+        // Temporarily disabled HMS SDK due to React 19 compatibility
+        // const HMS = await import('@100mslive/react-sdk');
+        console.log('HMS SDK temporarily disabled for build compatibility');
         
         // TODO: Initialize 100ms room with token
         // const hms = await HMS.HMSRoomProvider({

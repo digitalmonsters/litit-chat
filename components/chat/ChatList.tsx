@@ -33,6 +33,7 @@ export interface ChatListProps {
 interface ChatListItem extends FirestoreChat {
   lastMessage?: FirestoreMessage;
   unreadCount: number;
+  participantDetails?: Record<string, { displayName?: string; photoURL?: string }>;
 }
 
 export default function ChatList({
@@ -210,13 +211,13 @@ function ChatListItem({ chat, isSelected, onClick }: ChatListItemProps) {
         {participantAvatar ? (
           <img
             src={participantAvatar}
-            alt={participantName}
+            alt={participantName || 'Avatar'}
             className="w-12 h-12 rounded-full object-cover"
           />
         ) : (
           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#FF5E3A] to-[#FF9E57] flex items-center justify-center">
             <span className="text-white font-semibold">
-              {participantName.charAt(0).toUpperCase()}
+              {participantName?.charAt(0).toUpperCase() || '?'}
             </span>
           </div>
         )}

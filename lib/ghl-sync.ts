@@ -50,7 +50,7 @@ function getLocationId(user?: FirestoreUser): string {
  */
 function userToGHLContact(user: FirestoreUser, locationId: string): GHLContact {
   // Split displayName into firstName and lastName
-  const nameParts = user.displayName.trim().split(' ');
+  const nameParts = (user.displayName || 'User').trim().split(' ');
   const firstName = nameParts[0] || '';
   const lastName = nameParts.slice(1).join(' ') || '';
 
@@ -62,16 +62,20 @@ function userToGHLContact(user: FirestoreUser, locationId: string): GHLContact {
   let postalCode = '';
 
   if (user.location) {
-    address1 = user.location.address || '';
-    city = user.location.city || '';
-    country = user.location.country || '';
+    if (typeof user.location === 'string') {
+      address1 = user.location;
+    } else {
+      address1 = user.location.address || '';
+      city = user.location.city || '';
+      country = user.location.country || '';
+    }
   }
 
   const contact: GHLContact = {
     firstName,
     lastName,
     email: user.email,
-    phone: user.metadata?.phone,
+    phone: user.metadata?.phone as string,
     address1,
     city,
     country,
