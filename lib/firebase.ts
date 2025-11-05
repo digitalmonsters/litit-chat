@@ -1,6 +1,7 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getAuth, Auth } from 'firebase/auth';
+import { getMessaging, getToken, onMessage, Messaging } from 'firebase/messaging';
 
 // Firebase configuration interface
 interface FirebaseConfig {
@@ -103,6 +104,89 @@ export const COLLECTIONS = {
   LIVESTREAMS: 'livestreams',
   TIPS: 'tips',
 } as const;
+
+/**
+ * Get Firebase Messaging instance
+ */
+let messaging: Messaging | null = null;
+
+export function getMessagingInstance(): Messaging | null {
+  if (typeof window === 'undefined') {
+    return null; // Server-side, return null
+  }
+
+  if (messaging) {
+    return messaging;
+  }
+
+  try {
+    const app = getFirebaseApp();
+    messaging = getMessaging(app);
+    return messaging;
+  } catch (error) {
+    console.error('Failed to initialize Firebase Messaging:', error);
+    return null;
+  }
+}
+
+/**
+ * Request notification permission and get FCM token
+ */
+export const requestNotificationPermission = async () => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    const messagingInstance = getMessagingInstance();
+    if (!messagingInstance) {
+      console.error('Firebase Messaging not initialized');
+      return;
+    }
+
+    const token = await getToken(messagingInstance, {
+      vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+    });
+
+    if (token) {
+      console.log('✅ FCM token:', token);
+      // Save token to Firestore under users/{uid}/fcmToken
+      const auth = getAuthInstance();
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        const firestore = getFirestoreInstance();
+        const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
+        const userRef = doc(firestore, COLLECTIONS.USERS, currentUser.uid);
+        await updateDoc(userRef, {
+          fcmToken: token,
+          updatedAt: serverTimestamp(),
+        });
+        console.log('✅ FCM token saved to Firestore');
+      }
+    } else {
+      console.warn('❌ No registration token available.');
+    }
+  } catch (error) {
+    console.error('❌ Error retrieving FCM token:', error);
+  }
+};
+
+/**
+ * Set up onMessage handler for foreground messages
+ * Call this after initializing messaging
+ */
+export function setupForegroundMessageHandler() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const messagingInstance = getMessagingInstance();
+  if (messagingInstance) {
+    onMessage(messagingInstance, (payload) => {
+      console.log('🔔 Foreground message received:', payload);
+    });
+  }
+}
 
 /**
  * Initialize Firebase (call this on app startup)
