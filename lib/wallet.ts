@@ -159,7 +159,7 @@ export async function spendStars(
   userId: string,
   stars: number,
   description?: string
-): Promise<{ success: boolean; newBalance: number; error?: string }> {
+): Promise<{ success: boolean; newBalance: number; transactionId?: string; error?: string }> {
   try {
     const wallet = await getWallet(userId);
     if (!wallet) {

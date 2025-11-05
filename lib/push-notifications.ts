@@ -11,7 +11,7 @@ export async function sendMessageNotification(
   senderId: string,
   senderName: string,
   content: string,
-  type: 'text' | 'image' | 'video' | 'audio'
+  type: 'text' | 'image' | 'video' | 'audio' | 'file'
 ) {
   try {
     // Get chat participants

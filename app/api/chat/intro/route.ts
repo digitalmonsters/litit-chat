@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     const aiUsers = aiUsersSnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-    }));
+    })) as any[];
 
     // Filter AI users that have introScript
     const aiUsersWithIntro = aiUsers.filter((user) => user.introScript);
@@ -179,12 +179,12 @@ export async function GET(request: NextRequest) {
     );
 
     const aiUsersSnapshot = await getDocs(aiUsersQuery);
-    const aiUsers = aiUsersSnapshot.docs
+    const aiUsers = (aiUsersSnapshot.docs
       .map((doc) => ({
         id: doc.id,
         ...doc.data(),
-      }))
-      .filter((user) => user.introScript);
+      })) as any[])
+      .filter((user: any) => user.introScript);
 
     return NextResponse.json(
       {

@@ -21,6 +21,7 @@ export interface FirestoreUser {
   interests?: string[]; // User interests (from tags)
   provider?: 'google' | 'apple' | 'facebook' | 'phone' | 'email' | 'anonymous';
   verified?: boolean;
+  stripeCustomerId?: string; // Stripe customer ID for payments
   bio?: string;
   location?: string | { address?: string; city?: string; country?: string };
   trialStartDate?: Timestamp | Date | null;
@@ -288,7 +289,7 @@ export interface FirestoreCall {
   calleeId?: string; // Alias for receiverId
   sipEnabled?: boolean;
   sipPhoneNumber?: string;
-  status: 'initiating' | 'initiated' | 'ringing' | 'active' | 'ended' | 'failed' | 'missed';
+  status: 'initiating' | 'initiated' | 'ringing' | 'active' | 'ended' | 'failed' | 'missed' | 'cancelled';
 
   // Timing and billing
   startedAt?: Timestamp;

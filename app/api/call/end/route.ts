@@ -130,13 +130,13 @@ export async function POST(request: NextRequest) {
           if (result.success) {
             await updateDoc(callRef, {
               paymentStatus: 'paid',
-              transactionId: result.transactionId,
+              // transactionId: result.transactionId, // TODO: Implement transaction tracking
               updatedAt: serverTimestamp() as Timestamp,
             });
             billingResult = {
               success: true,
               message: `Wallet deduction successful: ${cost} stars`,
-              transactionId: result.transactionId,
+              // transactionId: result.transactionId, // TODO: Implement transaction tracking
             };
             console.log(`✅ Wallet deduction successful for call ${callId}: ${cost} stars`);
           } else {

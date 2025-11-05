@@ -103,7 +103,10 @@ export async function POST(request: NextRequest) {
     // Prepare messages for OpenAI
     const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
       { role: 'system', content: personaPrompt },
-      ...conversationHistory,
+      ...conversationHistory.map(msg => ({
+        role: msg.role as 'system' | 'user' | 'assistant',
+        content: msg.content
+      })),
       { role: 'user', content: userMessage },
     ];
 

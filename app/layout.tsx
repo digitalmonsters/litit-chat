@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist } from "next/font/google";
 import "./globals.css";
 import PWAProvider from "@/components/layout/PWAProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -13,10 +13,11 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// Geist_Mono temporarily disabled due to Google Fonts loading issue
+// const geistMono = Geist_Mono({
+//   variable: "--font-geist-mono",
+//   subsets: ["latin"],
+// });
 
 export const metadata: Metadata = {
   title: "Lit.it Chat - Real-time Chat Application",
@@ -80,7 +81,7 @@ export default function RootLayout({
         <link rel="apple-touch-startup-image" href="/icons/icon-512x512.png" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} antialiased`}
       >
         <PWAProvider>
           <AuthProvider>
