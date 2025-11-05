@@ -80,11 +80,99 @@ async function createUserDocument(user: admin.auth.UserRecord): Promise<void> {
 }
 
 /**
+ * Send intro DMs from AI users to new user
+ */
+async function sendIntroMessages(userId: string): Promise<void> {
+  try {
+    // Get AI users with intro scripts
+    const aiUsersSnapshot = await admin.firestore()
+      .collection('users')
+      .where('isAI', '==', true)
+      .get();
+
+    if (aiUsersSnapshot.empty) {
+      console.log('⚠️ No AI users found for intro DMs');
+      return;
+    }
+
+    const aiUsers = aiUsersSnapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter((user: any) => user.introScript);
+
+    if (aiUsers.length === 0) {
+      console.log('⚠️ No AI users with intro scripts found');
+      return;
+    }
+
+    // Randomly select 3 AI users
+    const shuffled = aiUsers.sort(() => 0.5 - Math.random());
+    const selectedAiUsers = shuffled.slice(0, Math.min(3, shuffled.length));
+
+    // Send intro DM from each selected AI user
+    for (const aiUser of selectedAiUsers) {
+      try {
+        const chatId = [userId, aiUser.id].sort().join('_');
+        const chatRef = admin.firestore().collection('chats').doc(chatId);
+
+        // Create chat
+        await chatRef.set({
+          id: chatId,
+          participantIds: [userId, aiUser.id],
+          isGroup: false,
+          unreadCounts: {
+            [userId]: 1,
+            [aiUser.id]: 0,
+          },
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+
+        // Create intro message
+        const messageRef = admin.firestore().collection('messages').doc();
+        const messageData = {
+          id: messageRef.id,
+          chatId,
+          senderId: aiUser.id,
+          senderName: (aiUser as any).displayName || (aiUser as any).firstName || 'AI Companion',
+          senderAvatar: (aiUser as any).photoURL || (aiUser as any).photoUrl || null,
+          content: (aiUser as any).introScript,
+          type: 'text',
+          status: 'sent',
+          timestamp: admin.firestore.Timestamp.now(),
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        };
+
+        await messageRef.set(messageData);
+
+        // Update chat with last message
+        await chatRef.update({
+          lastMessageId: messageRef.id,
+          lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        console.log(`✅ Sent intro DM from ${(aiUser as any).displayName || (aiUser as any).firstName} to user ${userId}`);
+      } catch (error) {
+        console.error(`❌ Error sending intro DM from ${aiUser.id}:`, error);
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error in sendIntroMessages:', error);
+  }
+}
+
+/**
  * Cloud Function: Create Firestore user document when Firebase Auth user is created
  */
 export const onCreateUser = functions.auth.user().onCreate(async (user) => {
   try {
     await createUserDocument(user);
+    
+    // Send intro DMs from AI users (non-blocking)
+    sendIntroMessages(user.uid).catch(err => 
+      console.error('Error sending intro messages:', err)
+    );
+    
     return null;
   } catch (error) {
     console.error(`❌ Error creating user document for ${user.uid}:`, error);
@@ -125,3 +213,43 @@ export const onUserSignIn = functions.auth.user().beforeSignIn(async (user, cont
     return null;
   }
 });
+
+/**
+ * Scheduled function to keep AI users online
+ * Runs every 5 minutes
+ */
+export const keepAiUsersOnline = functions.pubsub
+  .schedule('every 5 minutes')
+  .onRun(async (context) => {
+    try {
+      const aiUsersSnapshot = await admin.firestore()
+        .collection('users')
+        .where('isAI', '==', true)
+        .get();
+
+      if (aiUsersSnapshot.empty) {
+        console.log('⚠️ No AI users found');
+        return null;
+      }
+
+      const batch = admin.firestore().batch();
+      let count = 0;
+
+      aiUsersSnapshot.docs.forEach((doc) => {
+        batch.update(doc.ref, {
+          status: 'online',
+          lastSeen: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        count++;
+      });
+
+      await batch.commit();
+      console.log(`✅ Updated ${count} AI users to online status`);
+
+      return null;
+    } catch (error) {
+      console.error('❌ Error keeping AI users online:', error);
+      return null;
+    }
+  });
