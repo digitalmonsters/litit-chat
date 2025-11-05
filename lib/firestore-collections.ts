@@ -386,7 +386,8 @@ export interface FirestoreMessage {
   unlockCurrency?: 'USD' | 'STARS'; // Unlock currency
   unlockedBy?: string[] | Record<string, unknown>; // Users who unlocked (array or map)
   ghlInvoiceId?: string; // GHL invoice ID for unlock payment
-  
+  attachments?: Array<{ url: string; type: string; name?: string; size?: number }>; // Message attachments
+
   createdAt: Timestamp;
   updatedAt?: Timestamp;
   

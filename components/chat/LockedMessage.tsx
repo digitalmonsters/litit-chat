@@ -33,6 +33,12 @@ export default function LockedMessage({
     return null;
   }
 
+  // Safe access to attachment properties
+  const attachmentType = attachment?.type || '';
+  const attachmentUrl = attachment?.url || '';
+  const attachmentName = attachment?.name || 'File';
+  const attachmentSize = attachment?.size || 0;
+
   return (
     <motion.div
       initial="hidden"
@@ -49,16 +55,16 @@ export default function LockedMessage({
     >
       {/* Blurred media */}
       <div className="relative aspect-video bg-gray-800">
-        {attachment.type.startsWith('image/') ? (
+        {attachmentType.startsWith('image/') ? (
           <img
-            src={attachment.url}
-            alt={attachment.name}
+            src={attachmentUrl}
+            alt={attachmentName}
             className="w-full h-full object-cover blur-md scale-110"
             draggable={false}
           />
-        ) : attachment.type.startsWith('video/') ? (
+        ) : attachmentType.startsWith('video/') ? (
           <video
-            src={attachment.url}
+            src={attachmentUrl}
             className="w-full h-full object-cover blur-md scale-110"
             muted
             loop
@@ -167,10 +173,12 @@ export default function LockedMessage({
 
       {/* File info */}
       <div className="p-3 bg-gray-800/50 backdrop-blur-sm">
-        <p className="text-sm text-gray-300 truncate">{attachment.name}</p>
-        <p className="text-xs text-gray-500">
-          {(attachment.size / 1024).toFixed(1)} KB
-        </p>
+        <p className="text-sm text-gray-300 truncate">{attachmentName}</p>
+        {attachmentSize > 0 && (
+          <p className="text-xs text-gray-500">
+            {(attachmentSize / 1024).toFixed(1)} KB
+          </p>
+        )}
       </div>
     </motion.div>
   );
