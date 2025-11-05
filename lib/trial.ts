@@ -42,7 +42,9 @@ export async function isUserInTrial(userId: string): Promise<boolean> {
   }
 
   const now = new Date();
-  const trialEnd = userData.trialEndDate.toDate();
+  const trialEnd = userData.trialEndDate instanceof Date 
+    ? userData.trialEndDate 
+    : userData.trialEndDate.toDate();
 
   return now < trialEnd;
 }
@@ -107,8 +109,12 @@ export async function recordTrialCallUsage(
 
   const userData = userSnap.data() as FirestoreUser;
   const callMinutes = callDurationSeconds / 60;
-  const currentMinutesUsed = userData.metadata?.callTrialMinutesUsed || 0;
-  const currentCallsUsed = userData.metadata?.callTrialCallsUsed || 0;
+  const currentMinutesUsed = (typeof userData.metadata?.callTrialMinutesUsed === 'number' 
+    ? userData.metadata.callTrialMinutesUsed 
+    : 0) as number;
+  const currentCallsUsed = (typeof userData.metadata?.callTrialCallsUsed === 'number' 
+    ? userData.metadata.callTrialCallsUsed 
+    : 0) as number;
 
   await updateDoc(userRef, {
     updatedAt: serverTimestamp(),
@@ -184,7 +190,9 @@ export async function checkTrialExpiration(userId: string): Promise<{
   }
 
   const now = new Date();
-  const trialEnd = userData.trialEndDate.toDate();
+  const trialEnd = userData.trialEndDate instanceof Date 
+    ? userData.trialEndDate 
+    : userData.trialEndDate.toDate();
   const expired = now >= trialEnd;
 
   return {

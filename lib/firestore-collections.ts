@@ -129,10 +129,18 @@ export interface FirestoreTransaction {
   description?: string;
   relatedEntityId?: string; // e.g., paymentId, callId, messageId, livestreamId
   callId?: string;
+  callDuration?: number; // Duration in minutes
+  callRate?: number; // Rate in cents per minute
   battleId?: string;
   livepartyId?: string;
   livePartyId?: string; // alias casing used in some routes
   battleHostId?: string;
+  livePartyEntryFee?: number;
+  livePartyViewerMinutes?: number;
+  livePartyViewerRate?: number; // Rate per minute for viewer fees
+  paymentId?: string; // Associated payment ID
+  ghlTransactionId?: string; // GHL transaction ID
+  completedAt?: Timestamp;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   metadata?: Record<string, unknown>;
@@ -146,12 +154,15 @@ export interface CreateTransactionData {
   description?: string;
   callId?: string;
   callDuration?: number;
+  callRate?: number; // Rate in cents per minute
   battleId?: string;
   battleHostId?: string;
   livepartyId?: string;
   livePartyId?: string; // alias casing used in some routes
   livePartyEntryFee?: number;
   livePartyViewerMinutes?: number;
+  livePartyViewerRate?: number; // Rate per minute for viewer fees
+  paymentId?: string; // Associated payment ID
   relatedEntityId?: string;
   metadata?: Record<string, unknown>;
 }
@@ -373,9 +384,14 @@ export interface CreateWalletData {
 }
 
 export interface UpdateWalletData {
-  userId: string;
+  userId?: string; // Optional - can be passed separately to updateWalletBalance
   starsDelta?: number;
   usdDelta?: number;
+  // Direct value updates (used in wallet.ts)
+  stars?: number;
+  usd?: number;
+  totalEarned?: number;
+  totalSpent?: number;
+  totalUsdSpent?: number;
+  metadata?: Record<string, unknown>;
 }
-
-export { CreateWalletData, UpdateWalletData };
